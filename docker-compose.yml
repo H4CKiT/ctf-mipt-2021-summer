@@ -1,0 +1,24 @@
+version: "3.3"
+
+services:
+  thenextnothing:
+    build: ./TheNextNothing
+    command: python manage.py runserver 0.0.0.0:1337
+    volumes:
+      - ./TheNextNothing:/tnn/
+    ports:
+      - "1337:1337"
+  nctimeabuse:
+    build: ./NC_time_abuse
+    command: python server.py
+    volumes:
+      - ./NC_time_abuse:/ncta/
+    ports:
+      - "8889:8889"
+  tasks:
+    build: ./Tasks
+    command: python manage.py runserver 0.0.0.0:8002
+    volumes:
+      - ./Tasks:/tsks/
+    ports:
+      - "8002:8002"
