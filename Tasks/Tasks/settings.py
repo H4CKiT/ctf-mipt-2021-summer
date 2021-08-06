@@ -17,7 +17,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'Caesar',
     'Zipper',
-    'Stego'
+    'Stego',
+    'Pyc'
 ]
 
 MIDDLEWARE = [

@@ -11,3 +11,7 @@ Cv4k5ie
 CTf_1s_c00L
 
 miptctfaaa
+
+
+import py_compile
+py_compile.compile('main.py', 'secret_file.pyc')
