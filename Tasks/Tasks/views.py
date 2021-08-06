@@ -1,6 +1,6 @@
-from django.http import FileResponse
+from django.http import HttpResponse
 
 
 def crypto(request):
-    file = open('Vegenere/crypto', 'rb')
-    return FileResponse(file)
+    file = open('Vegenere/crypto', 'r')
+    return HttpResponse(file.read())
