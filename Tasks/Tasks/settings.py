@@ -4,7 +4,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'omgsecretkey2'
 
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*', ]
 
@@ -15,8 +15,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'WhiteSpaceMorze',
-    'Zipper'
+    'Caesar',
+    'Zipper',
+    'Stego'
 ]
 
 MIDDLEWARE = [
