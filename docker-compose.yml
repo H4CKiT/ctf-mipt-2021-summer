@@ -8,6 +8,7 @@ services:
       - ./TheNextNothing:/tnn/
     ports:
       - "1337:1337"
+    restart: always
   nctimeabuse:
     build: ./NC_time_abuse
     command: python server.py
@@ -15,6 +16,7 @@ services:
       - ./NC_time_abuse:/ncta/
     ports:
       - "8889:8889"
+    restart: always
   tasks:
     build: ./Tasks
     command: python manage.py runserver 0.0.0.0:8002
@@ -22,3 +24,12 @@ services:
       - ./Tasks:/tsks/
     ports:
       - "8002:8002"
+    restart: always
+#  ds:
+#    build: ./django-shop
+#    command: python manage.py runserver 0.0.0.0:8003
+#    volumes:
+#      - ./django-shop:/ds/
+#    ports:
+#      - "8003:8003"
+#    restart: always

@@ -50,13 +50,14 @@ class ThreadedServer(object):
                             client.close()
                             print('Close connection', address)
                             return False
-                        elif password.startswith(data):
-                            client.send(f"Yeah, but not at all\n".encode('utf-8'))
-                            print("Nice try", address)
                         else:
-                            time.sleep(1)
-                            client.send("Wrong guess!\n".encode('utf-8'))
-                            print("Wrong guess", address)
+                            for i in range(min(len(password), len(data))):
+                                if password[i] == data[i]:
+                                    time.sleep(1)
+                                else:
+                                    break
+                            client.send(f"Go sleep. It's too hard for you\n".encode('utf-8'))
+                            print("Nice try", address)
                     else:
                         client.shutdown(2)
                         client.close()

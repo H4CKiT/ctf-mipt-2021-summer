@@ -1,3 +1,4 @@
 ncta: mipt_ctf_wait_for_flag
 tnn: mipt_ctf_nothing_is_nothing
 tsks: wsm: mipt_ctf_caesar_one_love
+tsks: zpr: mipt_ctf_zipper_just_zip

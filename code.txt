@@ -1,0 +1,1310 @@
+[33mcommit 7d89e19f7b511d29083d149ec304a6ffdcc6498a[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: h4ckit <h4ckit@mail.ru>
+Date:   Fri Aug 6 17:43:29 2021 +0300
+
+    initial
+
+[1mdiff --git a/.gitignore b/.gitignore[m
+[1mnew file mode 100644[m
+[1mindex 0000000..3b931ee[m
+[1m--- /dev/null[m
+[1m+++ b/.gitignore[m
+[36m@@ -0,0 +1,4 @@[m
+[32m+[m[32m.idea[m
+[32m+[m[32mvenv[m
+[32m+[m[32m*.pyc[m
+[32m+[m[32m*.pyp[m
+[1mdiff --git a/NC_time_abuse/Dockerfile b/NC_time_abuse/Dockerfile[m
+[1mnew file mode 100644[m
+[1mindex 0000000..6cd7c50[m
+[1m--- /dev/null[m
+[1m+++ b/NC_time_abuse/Dockerfile[m
+[36m@@ -0,0 +1,8 @@[m
+[32m+[m[32m# syntax=docker/dockerfile:1[m
+[32m+[m[32mFROM python:3[m
+[32m+[m[32mENV PYTHONUNBUFFERED=1[m
+[32m+[m[32mWORKDIR /ncta[m
+[32m+[m[32mCOPY requirements.txt /ncta/[m
+[32m+[m[32mRUN python -m pip install --upgrade pip[m
+[32m+[m[32mRUN pip install -r requirements.txt[m
+[32m+[m[32mCOPY . /ncta/[m
+\ No newline at end of file[m
+[1mdiff --git a/NC_time_abuse/requirements.txt b/NC_time_abuse/requirements.txt[m
+[1mnew file mode 100644[m
+[1mindex 0000000..da2d649[m
+[1m--- /dev/null[m
+[1m+++ b/NC_time_abuse/requirements.txt[m
+[36m@@ -0,0 +1,4 @@[m
+[32m+[m[32masgiref==3.3.4[m
+[32m+[m[32mDjango==3.2.4[m
+[32m+[m[32mpytz==2021.1[m
+[32m+[m[32msqlparse==0.4.1[m
+[1mdiff --git a/NC_time_abuse/server.py b/NC_time_abuse/server.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..37b0d62[m
+[1m--- /dev/null[m
+[1m+++ b/NC_time_abuse/server.py[m
+[36m@@ -0,0 +1,73 @@[m
+[32m+[m[32mimport socket[m
+[32m+[m[32mimport threading[m
+[32m+[m[32mimport time[m
+[32m+[m
+[32m+[m
+[32m+[m[32mclass ThreadedServer(object):[m
+[32m+[m[32m    def __init__(self, host, port):[m
+[32m+[m[32m        self.host = host[m
+[32m+[m[32m        self.port = port[m
+[32m+[m[32m        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)[m
+[32m+[m[32m        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)[m
+[32m+[m[32m        self.sock.bind((self.host, self.port))[m
+[32m+[m
+[32m+[m[32m    def listen(self):[m
+[32m+[m[32m        self.sock.listen(50)[m
+[32m+[m[32m        while True:[m
+[32m+[m[32m            client, address = self.sock.accept()[m
+[32m+[m[32m            client.gettimeout()[m
+[32m+[m[32m            client.settimeout(60)[m
+[32m+[m[32m            threading.Thread(target=self.listenToClient, args=(client, address)).start()[m
+[32m+[m
+[32m+[m[32m    def listenToClient(self, client, address):[m
+[32m+[m[32m        print(f"New connection {address}")[m
+[32m+[m[32m        size = 1024[m
+[32m+[m[32m        while True:[m
+[32m+[m[32m            try:[m
+[32m+[m[32m                data = client.recv(size)[m
+[32m+[m[32m                data = data[:-1][m
+[32m+[m[32m                if data:[m
+[32m+[m[32m                    # Set the response to echo back the recieved data[m
+[32m+[m[32m                    print(data)[m
+[32m+[m[32m                    client.send("Hello my friend, now try to guess the password[0-9a-zA-Z)):\n".encode('utf-8'))[m
+[32m+[m[32m                    print("Hello guess", address)[m
+[32m+[m[32m                else:[m
+[32m+[m[32m                    client.shutdown(2)[m
+[32m+[m[32m                    client.close()[m
+[32m+[m[32m                    print('Close connection', address)[m
+[32m+[m[32m                    return False[m
+[32m+[m[32m                while True:[m
+[32m+[m[32m                    data = client.recv(size)[m
+[32m+[m[32m                    data = data[:-1][m
+[32m+[m[32m                    if data:[m
+[32m+[m[32m                        # Set the response to echo back the recieved data[m
+[32m+[m[32m                        print("Password try", data, address)[m
+[32m+[m[32m                        password = b'ReaLlyNicEgueSs1337maYbeNOt'[m
+[32m+[m[32m                        if data == password:[m
+[32m+[m[32m                            client.send(f"Yeah, it's correct, your flag is {'mipt_ctf_wait_for_flag'}\n".encode('utf-8'))[m
+[32m+[m[32m                            print("Nice guess", address)[m
+[32m+[m[32m                            client.shutdown()[m
+[32m+[m[32m                            client.close()[m
+[32m+[m[32m                            print('Close connection', address)[m
+[32m+[m[32m                            return False[m
+[32m+[m[32m                        elif password.startswith(data):[m
+[32m+[m[32m                            client.send(f"Yeah, but not at all\n".encode('utf-8'))[m
+[32m+[m[32m                            print("Nice try", address)[m
+[32m+[m[32m                        else:[m
+[32m+[m[32m                            time.sleep(1)[m
+[32m+[m[32m                            client.send("Wrong guess!\n".encode('utf-8'))[m
+[32m+[m[32m                            print("Wrong guess", address)[m
+[32m+[m[32m                    else:[m
+[32m+[m[32m                        client.shutdown(2)[m
+[32m+[m[32m                        client.close()[m
+[32m+[m[32m                        print('Close connection', address)[m
+[32m+[m[32m                        return False[m
+[32m+[m[32m            except:[m
+[32m+[m[32m                client.shutdown(2)[m
+[32m+[m[32m                client.close()[m
+[32m+[m[32m                print('Close connection', address)[m
+[32m+[m[32m                return False[m
+[32m+[m
+[32m+[m
+[32m+[m[32mif __name__ == "__main__":[m
+[32m+[m[32m    ThreadedServer('0.0.0.0', 8889).listen()[m
+[1mdiff --git a/README.md b/README.md[m
+[1mnew file mode 100644[m
+[1mindex 0000000..90b40d7[m
+[1m--- /dev/null[m
+[1m+++ b/README.md[m
+[36m@@ -0,0 +1,2 @@[m
+[32m+[m[32m# ctf-mipt-2021-summer[m
+[32m+[m[32mCTFFFFFF!!!!!![m
+[1mdiff --git a/Tasks/Dockerfile b/Tasks/Dockerfile[m
+[1mnew file mode 100644[m
+[1mindex 0000000..c4a297f[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/Dockerfile[m
+[36m@@ -0,0 +1,8 @@[m
+[32m+[m[32m# syntax=docker/dockerfile:1[m
+[32m+[m[32mFROM python:3[m
+[32m+[m[32mENV PYTHONUNBUFFERED=1[m
+[32m+[m[32mWORKDIR /tsks[m
+[32m+[m[32mCOPY requirements.txt /tsks/[m
+[32m+[m[32mRUN python -m pip install --upgrade pip[m
+[32m+[m[32mRUN pip install -r requirements.txt[m
+[32m+[m[32mCOPY . /tsks/[m
+\ No newline at end of file[m
+[1mdiff --git a/Tasks/Tasks/__init__.py b/Tasks/Tasks/__init__.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..e69de29[m
+[1mdiff --git a/Tasks/Tasks/asgi.py b/Tasks/Tasks/asgi.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..1bbed93[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/Tasks/asgi.py[m
+[36m@@ -0,0 +1,7 @@[m
+[32m+[m[32mimport os[m
+[32m+[m
+[32m+[m[32mfrom django.core.asgi import get_asgi_application[m
+[32m+[m
+[32m+[m[32mos.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Tasks.settings')[m
+[32m+[m
+[32m+[m[32mapplication = get_asgi_application()[m
+[1mdiff --git a/Tasks/Tasks/settings.py b/Tasks/Tasks/settings.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..3d61627[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/Tasks/settings.py[m
+[36m@@ -0,0 +1,85 @@[m
+[32m+[m[32mfrom pathlib import Path[m
+[32m+[m
+[32m+[m[32mBASE_DIR = Path(__file__).resolve().parent.parent[m
+[32m+[m
+[32m+[m[32mSECRET_KEY = 'omgsecretkey2'[m
+[32m+[m
+[32m+[m[32mDEBUG = True[m
+[32m+[m
+[32m+[m[32mALLOWED_HOSTS = ['*', ][m
+[32m+[m
+[32m+[m[32mINSTALLED_APPS = [[m
+[32m+[m[32m    'django.contrib.admin',[m
+[32m+[m[32m    'django.contrib.auth',[m
+[32m+[m[32m    'django.contrib.contenttypes',[m
+[32m+[m[32m    'django.contrib.sessions',[m
+[32m+[m[32m    'django.contrib.messages',[m
+[32m+[m[32m    'django.contrib.staticfiles',[m
+[32m+[m[32m    'WhiteSpaceMorze'[m
+[32m+[m[32m][m
+[32m+[m
+[32m+[m[32mMIDDLEWARE = [[m
+[32m+[m[32m    'django.middleware.security.SecurityMiddleware',[m
+[32m+[m[32m    'django.contrib.sessions.middleware.SessionMiddleware',[m
+[32m+[m[32m    'django.middleware.common.CommonMiddleware',[m
+[32m+[m[32m    'django.middleware.csrf.CsrfViewMiddleware',[m
+[32m+[m[32m    'django.contrib.auth.middleware.AuthenticationMiddleware',[m
+[32m+[m[32m    'django.contrib.messages.middleware.MessageMiddleware',[m
+[32m+[m[32m    'django.middleware.clickjacking.XFrameOptionsMiddleware',[m
+[32m+[m[32m][m
+[32m+[m
+[32m+[m[32mROOT_URLCONF = 'Tasks.urls'[m
+[32m+[m
+[32m+[m[32mTEMPLATES = [[m
+[32m+[m[32m    {[m
+[32m+[m[32m        'BACKEND': 'django.template.backends.django.DjangoTemplates',[m
+[32m+[m[32m        'DIRS': [],[m
+[32m+[m[32m        'APP_DIRS': True,[m
+[32m+[m[32m        'OPTIONS': {[m
+[32m+[m[32m            'context_processors': [[m
+[32m+[m[32m                'django.template.context_processors.debug',[m
+[32m+[m[32m                'django.template.context_processors.request',[m
+[32m+[m[32m                'django.contrib.auth.context_processors.auth',[m
+[32m+[m[32m                'django.contrib.messages.context_processors.messages',[m
+[32m+[m[32m            ],[m
+[32m+[m[32m        },[m
+[32m+[m[32m    },[m
+[32m+[m[32m][m
+[32m+[m
+[32m+[m[32mWSGI_APPLICATION = 'Tasks.wsgi.application'[m
+[32m+[m
+[32m+[m[32mDATABASES = {[m
+[32m+[m[32m    'default': {[m
+[32m+[m[32m        'ENGINE': 'django.db.backends.sqlite3',[m
+[32m+[m[32m        'NAME': BASE_DIR / 'db.sqlite3',[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mAUTH_PASSWORD_VALIDATORS = [[m
+[32m+[m[32m    {[m
+[32m+[m[32m        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',[m
+[32m+[m[32m    },[m
+[32m+[m[32m    {[m
+[32m+[m[32m        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',[m
+[32m+[m[32m    },[m
+[32m+[m[32m    {[m
+[32m+[m[32m        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',[m
+[32m+[m[32m    },[m
+[32m+[m[32m    {[m
+[32m+[m[32m        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',[m
+[32m+[m[32m    },[m
+[32m+[m[32m][m
+[32m+[m
+[32m+[m[32mLANGUAGE_CODE = 'en-us'[m
+[32m+[m
+[32m+[m[32mTIME_ZONE = 'UTC'[m
+[32m+[m
+[32m+[m[32mUSE_I18N = True[m
+[32m+[m
+[32m+[m[32mUSE_L10N = True[m
+[32m+[m
+[32m+[m[32mUSE_TZ = True[m
+[32m+[m
+[32m+[m[32mSTATIC_URL = '/static/'[m
+[32m+[m
+[32m+[m[32mDEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'[m
+[1mdiff --git a/Tasks/Tasks/urls.py b/Tasks/Tasks/urls.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..ab67be1[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/Tasks/urls.py[m
+[36m@@ -0,0 +1,5 @@[m
+[32m+[m[32mfrom django.urls import path, include[m
+[32m+[m
+[32m+[m[32murlpatterns = [[m
+[32m+[m[32m    path('caesar/', include('WhiteSpaceMorze.urls')),[m
+[32m+[m[32m][m
+[1mdiff --git a/Tasks/Tasks/wsgi.py b/Tasks/Tasks/wsgi.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..ca11d4a[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/Tasks/wsgi.py[m
+[36m@@ -0,0 +1,16 @@[m
+[32m+[m[32m"""[m
+[32m+[m[32mWSGI config for Tasks project.[m
+[32m+[m
+[32m+[m[32mIt exposes the WSGI callable as a module-level variable named ``application``.[m
+[32m+[m
+[32m+[m[32mFor more information on this file, see[m
+[32m+[m[32mhttps://docs.djangoproject.com/en/3.2/howto/deployment/wsgi/[m
+[32m+[m[32m"""[m
+[32m+[m
+[32m+[m[32mimport os[m
+[32m+[m
+[32m+[m[32mfrom django.core.wsgi import get_wsgi_application[m
+[32m+[m
+[32m+[m[32mos.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Tasks.settings')[m
+[32m+[m
+[32m+[m[32mapplication = get_wsgi_application()[m
+[1mdiff --git a/Tasks/WhiteSpaceMorze/Process_text.py b/Tasks/WhiteSpaceMorze/Process_text.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..3ab8524[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/WhiteSpaceMorze/Process_text.py[m
+[36m@@ -0,0 +1,55 @@[m
+[32m+[m[32mdef process():[m
+[32m+[m[32m    # https://cryptii.com/pipes/caesar-cipher[m
+[32m+[m
+[32m+[m[32m    # https://www.ushistory.org/civ/6b.asp[m
+[32m+[m[32m    # http://www.perseus.tufts.edu/hopper/text;jsessionid=205D83A2883AC263B608CF457C5DEDAB?doc=Perseus%3Atext%3A1999.03.0078%3Atext%3DCaes.[m
+[32m+[m[32m    flag = 'mipt_ctf_caesar_one_love'[m
+[32m+[m[32m    flag_caesar = 'tpwa_jam_jhlzhy_vul_svcl'[m
+[32m+[m[32m    flag_reverse = 'lcvs_luv_yhzlhj_maj_awpt'[m
+[32m+[m[32m    flag_spelling = 'Lima Charlie Victor Sierra _ Lima Uniform Victor _ Yankee Hotel Zulu Lima Hotel Juliett _ Mike Alfa Juliett _ Alfa Whiskey Papa Tango'[m
+[32m+[m[32m    flag_base32 = 'JRUW2YJAINUGC4TMNFSSAVTJMN2G64RAKNUWK4TSMEQF6ICMNFWWCICVNZUWM33SNUQFM2LDORXXEIC7EBMWC3TLMVSSASDPORSWYIC2OVWHKICMNFWWCICIN52GK3BAJJ2WY2LFOR2CAXZAJVUWWZJAIFWGMYJAJJ2WY2LFOR2CAXZAIFWGMYJAK5UGS43LMV4SAUDBOBQSAVDBNZTW6==='[m
+[32m+[m[32m    flag_morze = '0111 010 001 011 00111 1011 0111 01 00 10 001 110 1010 00001 1 11 10 0010 000 000 01 0001 1 0111 11 10 00111 110 10000 00001 010 01 101 10 001 011 101 00001 1 000 11 0 1101 0010 10000 00 1010 11 10 0010 011 011 1010 00 1010 0001 10 1100 001 011 11 00011 00011 000 10 001 1101 0010 11 00111 0100 100 111 010 1001 1001 0 00 1010 11000 0 1000 11 011 1010 00011 1 0100 11 0001 000 000 01 000 100 0110 111 010 000 011 1011 00 1010 00111 111 0001 011 0000 101 00 1010 11 10 0010 011 011 1010 00 1010 00 10 00000 00111 110 101 00011 1000 01 0111 0111 00111 011 1011 00111 0100 0010 111 010 00111 1010 01 1001 1100 01 0111 0001 001 011 011 1100 0111 01 00 0010 011 110 11 1011 0111 01 0111 0111 00111 011 1011 00111 0100 0010 111 010 00111 1010 01 1001 1100 01 00 0010 011 110 11 1011 0111 01 101 00000 001 110 000 00001 00011 0100 11 0001 00001 000 01 001 100 1000 111 1000 1101 000 01 0001 100 1000 10 1100 1 011 10000 10001 10001 10001'[m
+[32m+[m[32m    file = open('caesar_text.txt', 'r')[m
+[32m+[m[32m    # 0 - space[m
+[32m+[m[32m    # 1 - tab[m
+[32m+[m[32m    # space - \n[m
+[32m+[m[32m    data = file.readline()[m
+[32m+[m[32m    file.close()[m
+[32m+[m[32m    data = data.split()[m
+[32m+[m[32m    output_file = open('caesar_encoded.txt', 'w+')[m
+[32m+[m[32m    ids = 0[m
+[32m+[m[32m    for k in flag_morze:[m
+[32m+[m[32m        if k == '0':[m
+[32m+[m[32m            output_file.write(data[ids] + ' ')[m
+[32m+[m[32m            ids += 1[m
+[32m+[m[32m        elif k == '1':[m
+[32m+[m[32m            output_file.write(data[ids] + '\t')[m
+[32m+[m[32m            ids += 1[m
+[32m+[m[32m        elif k == ' ':[m
+[32m+[m[32m            output_file.write('\n')[m
+[32m+[m
+[32m+[m[32m    output_file.close()[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef check():[m
+[32m+[m[32m    # file = open('caesar_encoded.txt', 'r')[m
+[32m+[m[32m    file = open('ch.txt', 'r')[m
+[32m+[m[32m    ig = ''[m
+[32m+[m[32m    data = file.readlines()[m
+[32m+[m[32m    for i in data:[m
+[32m+[m[32m        for j in i:[m
+[32m+[m[32m            if j == ' ':[m
+[32m+[m[32m                ig += '0'[m
+[32m+[m[32m            elif j == '\t':[m
+[32m+[m[32m                ig += '1'[m
+[32m+[m[32m        ig += ' '[m
+[32m+[m[32m    ig = ig[:-1][m
+[32m+[m[32m    ig = ig[1:-1][m
+[32m+[m[32m    print(ig)[m
+[32m+[m[32m    flag_morze = '0111 010 001 011 00111 1011 0111 01 00 10 001 110 1010 00001 1 11 10 0010 000 000 01 0001 1 0111 11 10 00111 110 10000 00001 010 01 101 10 001 011 101 00001 1 000 11 0 1101 0010 10000 00 1010 11 10 0010 011 011 1010 00 1010 0001 10 1100 001 011 11 00011 00011 000 10 001 1101 0010 11 00111 0100 100 111 010 1001 1001 0 00 1010 11000 0 1000 11 011 1010 00011 1 0100 11 0001 000 000 01 000 100 0110 111 010 000 011 1011 00 1010 00111 111 0001 011 0000 101 00 1010 11 10 0010 011 011 1010 00 1010 00 10 00000 00111 110 101 00011 1000 01 0111 0111 00111 011 1011 00111 0100 0010 111 010 00111 1010 01 1001 1100 01 0111 0001 001 011 011 1100 0111 01 00 0010 011 110 11 1011 0111 01 0111 0111 00111 011 1011 00111 0100 0010 111 010 00111 1010 01 1001 1100 01 00 0010 011 110 11 1011 0111 01 101 00000 001 110 000 00001 00011 0100 11 0001 00001 000 01 001 100 1000 111 1000 1101 000 01 0001 100 1000 10 1100 1 011 10000 10001 10001 10001'[m
+[32m+[m[32m    print(ig == flag_morze)[m
+[32m+[m
+[32m+[m
+[32m+[m[32mif __name__ == '__main__':[m
+[32m+[m[32m    # process()[m
+[32m+[m[32m    check()[m
+[1mdiff --git a/Tasks/WhiteSpaceMorze/__init__.py b/Tasks/WhiteSpaceMorze/__init__.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..e69de29[m
+[1mdiff --git a/Tasks/WhiteSpaceMorze/admin.py b/Tasks/WhiteSpaceMorze/admin.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..8c38f3f[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/WhiteSpaceMorze/admin.py[m
+[36m@@ -0,0 +1,3 @@[m
+[32m+[m[32mfrom django.contrib import admin[m
+[32m+[m
+[32m+[m[32m# Register your models here.[m
+[1mdiff --git a/Tasks/WhiteSpaceMorze/apps.py b/Tasks/WhiteSpaceMorze/apps.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..f8cefa3[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/WhiteSpaceMorze/apps.py[m
+[36m@@ -0,0 +1,6 @@[m
+[32m+[m[32mfrom django.apps import AppConfig[m
+[32m+[m
+[32m+[m
+[32m+[m[32mclass WhitespacemorzeConfig(AppConfig):[m
+[32m+[m[32m    default_auto_field = 'django.db.models.BigAutoField'[m
+[32m+[m[32m    name = 'WhiteSpaceMorze'[m
+[1mdiff --git a/Tasks/WhiteSpaceMorze/caesar_encoded.txt b/Tasks/WhiteSpaceMorze/caesar_encoded.txt[m
+[1mnew file mode 100644[m
+[1mindex 0000000..a0d1590[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/WhiteSpaceMorze/caesar_encoded.txt[m
+[36m@@ -0,0 +1,216 @@[m
+[32m+[m[32mMpuhssf, h	uld	wyhjapjl[m[41m	[m
+[32m+[m[32mklclsvwlk pu	dopjo[m[41m [m
+[32m+[m[32maol hytf dhz[m[41m	[m
+[32m+[m[32mwhpk dpao	nvsk[m[41m	[m
+[32m+[m[32mhuk shuk. Zvskplyz	uv	svunly[m[41m	[m
+[32m+[m[32mmvbnoa	mvy aol	nvvk[m[41m	[m
+[32m+[m[32mvm aol	Ylwbispj	iba[m[41m	[m
+[32m+[m[32mmvbnoa puzalhk[m[41m	[m
+[32m+[m[32mmvy ahunpisl[m[41m [m
+[32m+[m[32myldhykz.	Nyhkbhssf,[m[41m [m
+[32m+[m[32mzvskplyz iljhtl tvyl[m[41m	[m
+[32m+[m[32msvfhs	av	aol[m[41m [m
+[32m+[m[32mnlulyhsz	dov jvbsk	whf[m[41m [m
+[32m+[m[32maolt aohu av aol Yvthu[m[41m	[m
+[32m+[m[32mYlwbispj[m[41m	[m
+[32m+[m[32mpazlsm.	Pa[m[41m	[m
+[32m+[m[32mdhz	dpaopu[m[41m [m
+[32m+[m[32maopz johunpun hatvzwolyl	aoha[m[41m [m
+[32m+[m[32mtpspahyf slhklyz zbjo[m[41m [m
+[32m+[m[32mhz Qbspbz Jhlzhy[m[41m [m
+[32m+[m[32mdlyl hisl[m[41m	[m
+[32m+[m[32mav zlpgl jvuayvs vm[m[41m	[m
+[32m+[m[32mhuk[m[41m	[m
+[32m+[m[32mwba hu	luk	av[m[41m	[m
+[32m+[m[32maol	Yvthu[m[41m	[m
+[32m+[m[32mYlwbispj.	Qbspbz[m[41m [m
+[32m+[m[32mJhlzhy dhz h	thu	vm[m[41m	[m
+[32m+[m[32mthuf	ahsluaz.	Ivyu[m[41m [m
+[32m+[m[32mpuav	aol whaypjphu jshzz, Jhlzhy[m[41m [m
+[32m+[m[32mdhz pualsspnlua, lkbjhalk, huk jbsapchalk.[m[41m	[m
+[32m+[m[32mHu lejlsslua	zwlhrly,[m[41m [m
+[32m+[m[32mol wvzzlzzlk[m[41m	[m
+[32m+[m[32mh	zohyw zluzl[m[41m	[m
+[32m+[m[32mvm	obtvy,[m[41m [m
+[32m+[m[32mjohyt, huk wlyzvuhspaf.[m[41m	[m
+[32m+[m[32mHss vm	aolzl[m[41m	[m
+[32m+[m[32mayhpaz	jvtipulk olswlk[m[41m	[m
+[32m+[m[32mthrl opt h zrpsslk wvspapjphu.[m[41m	[m
+[32m+[m[32mTvylvcly,[m[41m	[m
+[32m+[m[32mJhlzhy dhz h[m[41m [m
+[32m+[m[32mtpspahyf	nlupbz.[m[41m	[m
+[32m+[m[32mOpz[m[41m [m
+[32m+[m[32mthuf	zbjjlzzmbs	tpspahyf jhtwhpnuz[m[41m	[m
+[32m+[m[32mnhpulk opt iyvhk	zbwwvya[m[41m [m
+[32m+[m[32mhuk	wvwbshypaf htvun aol jvttvu[m[41m [m
+[32m+[m[32mwlvwsl. Jhlzhy[m[41m [m
+[32m+[m[32mhszv	dvu aol	bukfpun[m[41m [m
+[32m+[m[32msvfhsaf	vm[m[41m	[m
+[32m+[m[32mopz	zvskplyz,[m[41m [m
+[32m+[m[32mdov zbwwsplk opt	dpao[m[41m [m
+[32m+[m[32maol uljlzzhyf	tbzjsl[m[41m	[m
+[32m+[m[32mav zlpgl	wvdly.[m[41m	[m
+[32m+[m[32mQbspbz	Jhlzhy ilnhu	opz[m[41m [m
+[32m+[m[32mypzl av[m[41m [m
+[32m+[m[32mwvdly	pu 60	I.J.L.[m[41m [m
+[32m+[m[32mif mvynpun hu hssphujl[m[41m	[m
+[32m+[m[32mdpao	huvaoly[m[41m [m
+[32m+[m[32mnlulyhs,	Wvtwlf,	huk h[m[41m [m
+[32m+[m[32mdlhsaof whaypjphu, Jyhzzbz.[m[41m	[m
+[32m+[m[32mAvnlaoly, aolzl	aoyll[m[41m	[m
+[32m+[m[32mtlu	hzzbtlk[m[41m	[m
+[32m+[m[32mjvuayvs vm aol Yvthu	Ylwbispj,[m[41m	[m
+[32m+[m[32mhuk Jhlzhy dhz aoybza	puav[m[41m	[m
+[32m+[m[32maol wvzpapvu vm[m[41m [m
+[32m+[m[32mjvuzbs.	Opzavyphuz[m[41m [m
+[32m+[m[32mohcl zpujl kbiilk[m[41m	[m
+[32m+[m[32maol	wlypvk	vm ybsl[m[41m	[m
+[32m+[m[32mif aolzl aoyll	tlu[m[41m [m
+[32m+[m[32maol	Mpyza[m[41m	[m
+[32m+[m[32mAypbtcpyhal. Vcly aptl,	ovdlcly,	aol[m[41m	[m
+[32m+[m[32maypbtcpyhal iyvrl	kvdu. Jyhzzbz[m[41m [m
+[32m+[m[32mdhz	rpsslk pu[m[41m [m
+[32m+[m[32mihaasl,	huk	Wvtwlf[m[41m	[m
+[32m+[m[32milnhu lualyahpupun	pklhz[m[41m [m
+[32m+[m[32mvm	ybspun dpaovba aol[m[41m	[m
+[32m+[m[32mkhunlyvbzsf	wvwbshy Jhlzhy. Dopsl[m[41m	[m
+[32m+[m[32mJhlzhy[m[41m [m
+[32m+[m[32mdhz mpnoapun[m[41m [m
+[32m+[m[32mpu	Nhbs (tvklyu-khf	Myhujl),[m[41m [m
+[32m+[m[32mWvtwlf	huk	aol Zluhal vyklylk[m[41m [m
+[32m+[m[32mJhlzhy[m[41m [m
+[32m+[m[32mav	ylabyu av Yvtl[m[41m [m
+[32m+[m[32mdpaovba	opz[m[41m	[m
+[32m+[m[32mhytf. Iba	dolu[m[41m	[m
+[32m+[m[32mJhlzhy	jyvzzlk aol	Ybipjvu[m[41m [m
+[32m+[m[32mYpcly pu uvyaolyu Pahsf,	ol[m[41m	[m
+[32m+[m[32miyvbnoa[m[41m	[m
+[32m+[m[32mopz hytf	dpao opt[m[41m [m
+[32m+[m[32mpu	klmphujl[m[41m	[m
+[32m+[m[32mvm aol zluhal'z vykly.[m[41m	[m
+[32m+[m[32mAopz mhalmbs kljpzpvu[m[41m [m
+[32m+[m[32mslk av h[m[41m [m
+[32m+[m[32mjpcps dhy.[m[41m	[m
+[32m+[m[32mJhlzhy klmlhalk Wvtwlf'z[m[41m [m
+[32m+[m[32mmvyjlz	huk lualylk[m[41m [m
+[32m+[m[32mYvtl pu	46	I.J.L.,[m[41m [m
+[32m+[m[32maypbtwohua	huk	bujohsslunlk.[m[41m	[m
+[32m+[m[32mBwvu opz	ylabyu,[m[41m [m
+[32m+[m[32mJhlzhy thkl optzlsm[m[41m [m
+[32m+[m[32mkpjahavy huk	hizvsbal[m[41m	[m
+[32m+[m[32mybsly	vm Yvtl	huk[m[41m	[m
+[32m+[m[32mpaz alyypavyplz.[m[41m [m
+[32m+[m[32mKbypun	opz ybsl,	ol[m[41m [m
+[32m+[m[32mluhjalk zlclyhs ylmvytz.	Jhlzhy	mvbuklk[m[41m	[m
+[32m+[m[32mthuf	jvsvuplz	pu[m[41m	[m
+[32m+[m[32muldsf jvuxblylk alyypavyplz huk[m[41m	[m
+[32m+[m[32mwyvcpklk shuk	huk[m[41m	[m
+[32m+[m[32mvwwvyabupaf mvy wvvy Yvthuz[m[41m [m
+[32m+[m[32mdov	jovzl av[m[41m	[m
+[32m+[m[32mtpnyhal aolyl.[m[41m [m
+[32m+[m[32mOl	ylkbjlk aol	ubtily[m[41m [m
+[32m+[m[32mvm	zshclz[m[41m	[m
+[32m+[m[32mhuk	vwlulk[m[41m [m
+[32m+[m[32mjpapgluzopw bw av	wlvwsl[m[41m [m
+[32m+[m[32mspcpun pu	aol[m[41m	[m
+[32m+[m[32mwyvcpujlz. Mpuhssf,	ol[m[41m	[m
+[32m+[m[32mjylhalk	h uld	jhslukhy[m[41m [m
+[32m+[m[32muhtlk aol[m[41m [m
+[32m+[m[32mQbsphu	jhslukhy. Aopz	clyf[m[41m [m
+[32m+[m[32mjhslukhy, dpao[m[41m [m
+[32m+[m[32mh	mld[m[41m [m
+[32m+[m[32mtpuvy hkqbzatluaz, pz aol zhtl[m[41m [m
+[32m+[m[32mvul bzlk hyvbuk	aol	dvysk[m[41m	[m
+[32m+[m[32mavkhf.	Pu	44[m[41m [m
+[32m+[m[32mI.J.L.,	Qbspbz Jhlzhy[m[41m	[m
+[32m+[m[32mvyklylk aol Zluhal av	thrl[m[41m	[m
+[32m+[m[32mopt	kpjahavy mvy spml.[m[41m [m
+[32m+[m[32mAfwpjhssf, kpjahavyz[m[41m	[m
+[32m+[m[32mzlyclk mvy	h	sptpalk[m[41m	[m
+[32m+[m[32maptl (bzbhssf	zpe	tvuaoz),[m[41m	[m
+[32m+[m[32maolu zalwwlk kvdu.	Jhlzhy'z	hjapvuz[m[41m	[m
+[32m+[m[32maoylhalulk av	luk[m[41m	[m
+[32m+[m[32maol	Ylwbispj vujl	huk[m[41m	[m
+[32m+[m[32mmvy hss. Mlhypun	aopz	johunl,[m[41m	[m
+[32m+[m[32mh nyvbw	vm zluhavyz[m[41m [m
+[32m+[m[32mwsvaalk huk leljbalk	aol[m[41m [m
+[32m+[m[32mtbykly	vm	Jhlzhy[m[41m	[m
+[32m+[m[32mvu aol	Pklz[m[41m [m
+[32m+[m[32mvm Thyjo. Hsaovbno	aol	zluhavyz[m[41m	[m
+[32m+[m[32mzbjjllklk	pu lukpun	Jhlzhy'z[m[41m [m
+[32m+[m[32mspml, aolf[m[41m	[m
+[32m+[m[32mkpk	uva ylhspgl ha[m[41m	[m
+[32m+[m[32maoha	aptl	aoha aol[m[41m [m
+[32m+[m[32mYlwbispj ohk[m[41m	[m
+[32m+[m[32mkplk dpao	opt.	Yvtl[m[41m	[m
+[32m+[m[32mdvbsk uvd iljvtl hu[m[41m	[m
+[32m+[m[32mltwpyl. Aolu ol[m[41m	[m
+[32m+[m[32mzlua opz	tlu[m[41m	[m
+[32m+[m[32mbw huk	kvdu[m[41m	[m
+[32m+[m[32mav	nla	opt aopz[m[41m [m
+[32m+[m[32mtvulf, zv	aoha	ol[m[41m	[m
+[32m+[m[32mdhz slma[m[41m	[m
+[32m+[m[32mpu thuuly[m[41m [m
+[32m+[m[32m5 hsvul htvun	aolzl[m[41m [m
+[32m+[m[32maoplclz vm	aol[m[41m	[m
+[32m+[m[32mJpspjphuz	(dopjo	hyl[m[41m [m
+[32m+[m[32maol	jyblsslza[m[41m	[m
+[32m+[m[32mibajolyz	pu aol	dvysk)[m[41m	[m
+[32m+[m[32mdpao vul	vm	opz[m[41m	[m
+[32m+[m[32mmyplukz, huk[m[41m	[m
+[32m+[m[32madv vm	opz	zshclz[m[41m	[m
+[32m+[m[32mvusf: huk	fla	ol[m[41m	[m
+[32m+[m[32mthkl zv spaasl	yljrvupun	vm[m[41m	[m
+[32m+[m[32maolt, aoha	dolu[m[41m	[m
+[32m+[m[32mol	dhz klzpyvbz	av[m[41m	[m
+[32m+[m[32mzsllw, ol zlua	buav	aolt[m[41m	[m
+[32m+[m[32mav jvtthuk	aolt av[m[41m [m
+[32m+[m[32mthrl uv uvpzl.	Aobz[m[41m [m
+[32m+[m[32mdhz	ol	aopyaf-lpnoa[m[41m	[m
+[32m+[m[32mkhfz htvun	aolt,[m[41m [m
+[32m+[m[32muva rlwa hz	wypzvuly,	iba[m[41m	[m
+[32m+[m[32myhaoly	dhpalk bwvu	if[m[41m [m
+[32m+[m[32maolt hz[m[41m	[m
+[32m+[m[32mh	wypujl. Hss aopz[m[41m	[m
+[32m+[m[32maptl	ol	dvbsk ivsksf[m[41m [m
+[32m+[m[32mlelyjpzl optzlsm[m[41m	[m
+[32m+[m[32mpu huf[m[41m [m
+[32m+[m[32mzwvya vy whzaptl	aolf[m[41m [m
+[32m+[m[32mdvbsk nv	av.[m[41m	[m
+[32m+[m[32mHuk	vaolydopsl	hszv[m[41m [m
+[32m+[m[32mol	dvbsk[m[41m	[m
+[32m+[m[32mdypal	clyzlz, huk	thrl[m[41m	[m
+[32m+[m[32mvyhapvuz, huk	jhss	aolt[m[41m	[m
+[32m+[m[32mavnlaoly av[m[41m	[m
+[32m+[m[32mzhf	aolt ilmvyl[m[41m	[m
+[32m+[m[32maolt: huk pm huf vm[m[41m [m
+[32m+[m[32maolt zlltlk hz[m[41m	[m
+[32m+[m[32maovbno	aolf	ohk[m[41m [m
+[32m+[m[32muva buklyzavvk opt,[m[41m [m
+[32m+[m[32mvy whzzlk 6 uva mvy[m[41m	[m
+[32m+[m[32maolt, ol jhsslk aolt	isvjrolhkz[m[41m	[m
+[32m+[m[32mhuk iybal	ilhzaz; huk[m[41m [m
+[32m+[m[32mshbnopun,	aoylhalulk[m[41m	[m
+[32m+[m[32maolt aoha ol dvbsk[m[41m	[m
+[32m+[m[32mohun aolt bw. Iba aolf[m[41m	[m
+[32m+[m[32mdlyl hz tlyyf[m[41m [m
+[32m+[m[32mdpao aol[m[41m	[m
+[32m+[m[32mthaaly hz jvbsk[m[41m	[m
+[32m+[m[32mil,	huk avvr[m[41m [m
+[32m+[m[32mhss	pu nvvk whya,[m[41m [m
+[32m+[m[32maopurpun	aoha	aopz[m[41m	[m
+[32m+[m[32mopz	ivsk zwlljo jhtl[m[41m [m
+[32m+[m[32maoyvbno	aol	zptwspjpaf vm[m[41m	[m
+[32m+[m[32mopz fvbao. Zv[m[41m [m
+[32m+[m[32mdolu opz[m[41m	[m
+[32m+[m[32myhuzvt dhz jvtl myvt[m[41m	[m
+[32m+[m[32maol	jpaf vm[m[41m [m
+[32m+[m[32mTpslabt,	aolf ilpun whpk[m[41m [m
+[32m+[m[32maolpy	tvulf,[m[41m [m
+[32m+[m[32mhuk	ol	hnhpu zla[m[41m [m
+[32m+[m[32mha[m[41m	[m
+[32m+[m[32mspilyaf, ol	aolu[m[41m	[m
+[32m+[m[32mwylzluasf	7 hytlk huk thuulk[m[41m [m
+[32m+[m[32mjlyahpu	zopwz vba vm aol[m[41m	[m
+[32m+[m[32mohclu	vm Tpslabt, av mvssvd[m[41m	[m
+[32m+[m[32maovzl	aoplclz, dovt ol mvbuk[m[41m	[m
+\ No newline at end of file[m
+[1mdiff --git a/Tasks/WhiteSpaceMorze/caesar_text.txt b/Tasks/WhiteSpaceMorze/caesar_text.txt[m
+[1mnew file mode 100644[m
+[1mindex 0000000..286a18e[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/WhiteSpaceMorze/caesar_text.txt[m
+[36m@@ -0,0 +1 @@[m
+[32m+[m[32mMpuhssf, h uld wyhjapjl klclsvwlk pu dopjo aol hytf dhz whpk dpao nvsk huk shuk. Zvskplyz uv svunly mvbnoa mvy aol nvvk vm aol Ylwbispj iba mvbnoa puzalhk mvy ahunpisl yldhykz. Nyhkbhssf, zvskplyz iljhtl tvyl svfhs av aol nlulyhsz dov jvbsk whf aolt aohu av aol Yvthu Ylwbispj pazlsm. Pa dhz dpaopu aopz johunpun hatvzwolyl aoha tpspahyf slhklyz zbjo hz Qbspbz Jhlzhy dlyl hisl av zlpgl jvuayvs vm huk wba hu luk av aol Yvthu Ylwbispj. Qbspbz Jhlzhy dhz h thu vm thuf ahsluaz. Ivyu puav aol whaypjphu jshzz, Jhlzhy dhz pualsspnlua, lkbjhalk, huk jbsapchalk. Hu lejlsslua zwlhrly, ol wvzzlzzlk h zohyw zluzl vm obtvy, johyt, huk wlyzvuhspaf. Hss vm aolzl ayhpaz jvtipulk olswlk thrl opt h zrpsslk wvspapjphu. Tvylvcly, Jhlzhy dhz h tpspahyf nlupbz. Opz thuf zbjjlzzmbs tpspahyf jhtwhpnuz nhpulk opt iyvhk zbwwvya huk wvwbshypaf htvun aol jvttvu wlvwsl. Jhlzhy hszv dvu aol bukfpun svfhsaf vm opz zvskplyz, dov zbwwsplk opt dpao aol uljlzzhyf tbzjsl av zlpgl wvdly. Qbspbz Jhlzhy ilnhu opz ypzl av wvdly pu 60 I.J.L. if mvynpun hu hssphujl dpao huvaoly nlulyhs, Wvtwlf, huk h dlhsaof whaypjphu, Jyhzzbz. Avnlaoly, aolzl aoyll tlu hzzbtlk jvuayvs vm aol Yvthu Ylwbispj, huk Jhlzhy dhz aoybza puav aol wvzpapvu vm jvuzbs. Opzavyphuz ohcl zpujl kbiilk aol wlypvk vm ybsl if aolzl aoyll tlu aol Mpyza Aypbtcpyhal. Vcly aptl, ovdlcly, aol aypbtcpyhal iyvrl kvdu. Jyhzzbz dhz rpsslk pu ihaasl, huk Wvtwlf ilnhu lualyahpupun pklhz vm ybspun dpaovba aol khunlyvbzsf wvwbshy Jhlzhy. Dopsl Jhlzhy dhz mpnoapun pu Nhbs (tvklyu-khf Myhujl), Wvtwlf huk aol Zluhal vyklylk Jhlzhy av ylabyu av Yvtl dpaovba opz hytf. Iba dolu Jhlzhy jyvzzlk aol Ybipjvu Ypcly pu uvyaolyu Pahsf, ol iyvbnoa opz hytf dpao opt pu klmphujl vm aol zluhal'z vykly. Aopz mhalmbs kljpzpvu slk av h jpcps dhy. Jhlzhy klmlhalk Wvtwlf'z mvyjlz huk lualylk Yvtl pu 46 I.J.L., aypbtwohua huk bujohsslunlk. Bwvu opz ylabyu, Jhlzhy thkl optzlsm kpjahavy huk hizvsbal ybsly vm Yvtl huk paz alyypavyplz. Kbypun opz ybsl, ol luhjalk zlclyhs ylmvytz. Jhlzhy mvbuklk thuf jvsvuplz pu uldsf jvuxblylk alyypavyplz huk wyvcpklk shuk huk vwwvyabupaf mvy wvvy Yvthuz dov jovzl av tpnyhal aolyl. Ol ylkbjlk aol ubtily vm zshclz huk vwlulk jpapgluzopw bw av wlvwsl spcpun pu aol wyvcpujlz. Mpuhssf, ol jylhalk h uld jhslukhy uhtlk aol Qbsphu jhslukhy. Aopz clyf jhslukhy, dpao h mld tpuvy hkqbzatluaz, pz aol zhtl vul bzlk hyvbuk aol dvysk avkhf. Pu 44 I.J.L., Qbspbz Jhlzhy vyklylk aol Zluhal av thrl opt kpjahavy mvy spml. Afwpjhssf, kpjahavyz zlyclk mvy h sptpalk aptl (bzbhssf zpe tvuaoz), aolu zalwwlk kvdu. Jhlzhy'z hjapvuz aoylhalulk av luk aol Ylwbispj vujl huk mvy hss. Mlhypun aopz johunl, h nyvbw vm zluhavyz wsvaalk huk leljbalk aol tbykly vm Jhlzhy vu aol Pklz vm Thyjo. Hsaovbno aol zluhavyz zbjjllklk pu lukpun Jhlzhy'z spml, aolf kpk uva ylhspgl ha aoha aptl aoha aol Ylwbispj ohk kplk dpao opt. Yvtl dvbsk uvd iljvtl hu ltwpyl. Aolu ol zlua opz tlu bw huk kvdu av nla opt aopz tvulf, zv aoha ol dhz slma pu thuuly 5 hsvul htvun aolzl aoplclz vm aol Jpspjphuz (dopjo hyl aol jyblsslza ibajolyz pu aol dvysk) dpao vul vm opz myplukz, huk adv vm opz zshclz vusf: huk fla ol thkl zv spaasl yljrvupun vm aolt, aoha dolu ol dhz klzpyvbz av zsllw, ol zlua buav aolt av jvtthuk aolt av thrl uv uvpzl. Aobz dhz ol aopyaf-lpnoa khfz htvun aolt, uva rlwa hz wypzvuly, iba yhaoly dhpalk bwvu if aolt hz h wypujl. Hss aopz aptl ol dvbsk ivsksf lelyjpzl optzlsm pu huf zwvya vy whzaptl aolf dvbsk nv av. Huk vaolydopsl hszv ol dvbsk dypal clyzlz, huk thrl vyhapvuz, huk jhss aolt avnlaoly av zhf aolt ilmvyl aolt: huk pm huf vm aolt zlltlk hz aovbno aolf ohk uva buklyzavvk opt, vy whzzlk 6 uva mvy aolt, ol jhsslk aolt isvjrolhkz huk iybal ilhzaz; huk shbnopun, aoylhalulk aolt aoha ol dvbsk ohun aolt bw. Iba aolf dlyl hz tlyyf dpao aol thaaly hz jvbsk il, huk avvr hss pu nvvk whya, aopurpun aoha aopz opz ivsk zwlljo jhtl aoyvbno aol zptwspjpaf vm opz fvbao. Zv dolu opz yhuzvt dhz jvtl myvt aol jpaf vm Tpslabt, aolf ilpun whpk aolpy tvulf, huk ol hnhpu zla ha spilyaf, ol aolu wylzluasf 7 hytlk huk thuulk jlyahpu zopwz vba vm aol ohclu vm Tpslabt, av mvssvd aovzl aoplclz, dovt ol mvbuk fla ypkpun ha hurly 8 pu aol zhtl pshuk 9. Zv ol avvr aol tvza vm aolt, huk ohk aol zwvps vm aolpy nvvkz; iba mvy 10 aolpy ivkplz, ol iyvbnoa aolt puav aol jpaf vm Wlynhtbz huk aolyl jvttpaalk aolt av wypzvu, dopsza ol optzlsm dlua av zwlhr dpao[m
+\ No newline at end of file[m
+[1mdiff --git a/Tasks/WhiteSpaceMorze/caesar_text_delta.txt b/Tasks/WhiteSpaceMorze/caesar_text_delta.txt[m
+[1mnew file mode 100644[m
+[1mindex 0000000..f15f1fc[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/WhiteSpaceMorze/caesar_text_delta.txt[m
+[36m@@ -0,0 +1 @@[m
+[32m+[m[32mFinally, a new practice developed in which the army was paid with gold and land. Soldiers no longer fought for the good of the Republic but fought instead for tangible rewards. Gradually, soldiers became more loyal to the generals who could pay them than to the Roman Republic itself. It was within this changing atmosphere that military leaders such as Julius Caesar were able to seize control of and put an end to the Roman Republic. Julius Caesar was a man of many talents. Born into the patrician class, Caesar was intelligent, educated, and cultivated. An excellent speaker, he possessed a sharp sense of humor, charm, and personality. All of these traits combined helped make him a skilled politician. Moreover, Caesar was a military genius. His many successful military campaigns gained him broad support and popularity among the common people. Caesar also won the undying loyalty of his soldiers, who supplied him with the necessary muscle to seize power. Julius Caesar began his rise to power in 60 B.C.E. by forging an alliance with another general, Pompey, and a wealthy patrician, Crassus. Together, these three men assumed control of the Roman Republic, and Caesar was thrust into the position of consul. Historians have since dubbed the period of rule by these three men the First Triumvirate. Over time, however, the triumvirate broke down. Crassus was killed in battle, and Pompey began entertaining ideas of ruling without the dangerously popular Caesar. While Caesar was fighting in Gaul (modern-day France), Pompey and the Senate ordered Caesar to return to Rome without his army. But when Caesar crossed the Rubicon River in northern Italy, he brought his army with him in defiance of the senate's order. This fateful decision led to a civil war. Caesar defeated Pompey's forces and entered Rome in 46 B.C.E., triumphant and unchallenged. Upon his return, Caesar made himself dictator and absolute ruler of Rome and its territories. During his rule, he enacted several reforms. Caesar founded many colonies in newly conquered territories and provided land and opportunity for poor Romans who chose to migrate there. He reduced the number of slaves and opened citizenship up to people living in the provinces. Finally, he created a new calendar named the Julian calendar. This very calendar, with a few minor adjustments, is the same one used around the world today. In 44 B.C.E., Julius Caesar ordered the Senate to make him dictator for life. Typically, dictators served for a limited time (usually six months), then stepped down. Caesar's actions threatened to end the Republic once and for all. Fearing this change, a group of senators plotted and executed the murder of Caesar on the Ides of March. Although the senators succeeded in ending Caesar's life, they did not realize at that time that the Republic had died with him. Rome would now become an empire. Then he sent his men up and down to get him this money, so that he was left in manner 5 alone among these thieves of the Cilicians (which are the cruellest butchers in the world) with one of his friends, and two of his slaves only: and yet he made so little reckoning of them, that when he was desirous to sleep, he sent unto them to command them to make no noise. Thus was he thirty-eight days among them, not kept as prisoner, but rather waited upon by them as a prince. All this time he would boldly exercise himself in any sport or pastime they would go to. And otherwhile also he would write verses, and make orations, and call them together to say them before them: and if any of them seemed as though they had not understood him, or passed 6 not for them, he called them blockheads and brute beasts; and laughing, threatened them that he would hang them up. But they were as merry with the matter as could be, and took all in good part, thinking that this his bold speech came through the simplicity of his youth. So when his ransom was come from the city of Miletum, they being paid their money, and he again set at liberty, he then presently 7 armed and manned certain ships out of the haven of Miletum, to follow those thieves, whom he found yet riding at anker 8 in the same iland 9. So he took the most of them, and had the spoil of their goods; but for 10 their bodies, he brought them into the city of Pergamus and there committed them to prison, whilst he himself went to speak with[m
+\ No newline at end of file[m
+[1mdiff --git a/Tasks/WhiteSpaceMorze/ch.txt b/Tasks/WhiteSpaceMorze/ch.txt[m
+[1mnew file mode 100644[m
+[1mindex 0000000..dda9f0f[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/WhiteSpaceMorze/ch.txt[m
+[36m@@ -0,0 +1,217 @@[m
+[32m+[m
+[32m+[m[32mMpuhssf, h	uld	wyhjapjl[m[41m	[m
+[32m+[m[32mklclsvwlk pu	dopjo[m[41m [m
+[32m+[m[32maol hytf dhz[m[41m	[m
+[32m+[m[32mwhpk dpao	nvsk[m[41m	[m
+[32m+[m[32mhuk shuk. Zvskplyz	uv	svunly[m[41m	[m
+[32m+[m[32mmvbnoa	mvy aol	nvvk[m[41m	[m
+[32m+[m[32mvm aol	Ylwbispj	iba[m[41m	[m
+[32m+[m[32mmvbnoa puzalhk[m[41m	[m
+[32m+[m[32mmvy ahunpisl[m[41m [m
+[32m+[m[32myldhykz.	Nyhkbhssf,[m[41m [m
+[32m+[m[32mzvskplyz iljhtl tvyl[m[41m	[m
+[32m+[m[32msvfhs	av	aol[m[41m [m
+[32m+[m[32mnlulyhsz	dov jvbsk	whf[m[41m [m
+[32m+[m[32maolt aohu av aol Yvthu[m[41m	[m
+[32m+[m[32mYlwbispj[m[41m	[m
+[32m+[m[32mpazlsm.	Pa[m[41m	[m
+[32m+[m[32mdhz	dpaopu[m[41m [m
+[32m+[m[32maopz johunpun hatvzwolyl	aoha[m[41m [m
+[32m+[m[32mtpspahyf slhklyz zbjo[m[41m [m
+[32m+[m[32mhz Qbspbz Jhlzhy[m[41m [m
+[32m+[m[32mdlyl hisl[m[41m	[m
+[32m+[m[32mav zlpgl jvuayvs vm[m[41m	[m
+[32m+[m[32mhuk[m[41m	[m
+[32m+[m[32mwba hu	luk	av[m[41m	[m
+[32m+[m[32maol	Yvthu[m[41m	[m
+[32m+[m[32mYlwbispj.	Qbspbz[m[41m [m
+[32m+[m[32mJhlzhy dhz h	thu	vm[m[41m	[m
+[32m+[m[32mthuf	ahsluaz.	Ivyu[m[41m [m
+[32m+[m[32mpuav	aol whaypjphu jshzz, Jhlzhy[m[41m [m
+[32m+[m[32mdhz pualsspnlua, lkbjhalk, huk jbsapchalk.[m[41m	[m
+[32m+[m[32mHu lejlsslua	zwlhrly,[m[41m [m
+[32m+[m[32mol wvzzlzzlk[m[41m	[m
+[32m+[m[32mh	zohyw zluzl[m[41m	[m
+[32m+[m[32mvm	obtvy,[m[41m [m
+[32m+[m[32mjohyt, huk wlyzvuhspaf.[m[41m	[m
+[32m+[m[32mHss vm	aolzl[m[41m	[m
+[32m+[m[32mayhpaz	jvtipulk olswlk[m[41m	[m
+[32m+[m[32mthrl opt h zrpsslk wvspapjphu.[m[41m	[m
+[32m+[m[32mTvylvcly,[m[41m	[m
+[32m+[m[32mJhlzhy dhz h[m[41m [m
+[32m+[m[32mtpspahyf	nlupbz.[m[41m	[m
+[32m+[m[32mOpz[m[41m [m
+[32m+[m[32mthuf	zbjjlzzmbs	tpspahyf jhtwhpnuz[m[41m	[m
+[32m+[m[32mnhpulk opt iyvhk	zbwwvya[m[41m [m
+[32m+[m[32mhuk	wvwbshypaf htvun aol jvttvu[m[41m [m
+[32m+[m[32mwlvwsl. Jhlzhy[m[41m [m
+[32m+[m[32mhszv	dvu aol	bukfpun[m[41m [m
+[32m+[m[32msvfhsaf	vm[m[41m	[m
+[32m+[m[32mopz	zvskplyz,[m[41m [m
+[32m+[m[32mdov zbwwsplk opt	dpao[m[41m [m
+[32m+[m[32maol uljlzzhyf	tbzjsl[m[41m	[m
+[32m+[m[32mav zlpgl	wvdly.[m[41m	[m
+[32m+[m[32mQbspbz	Jhlzhy ilnhu	opz[m[41m [m
+[32m+[m[32mypzl av[m[41m [m
+[32m+[m[32mwvdly	pu 60	I.J.L.[m[41m [m
+[32m+[m[32mif mvynpun hu hssphujl[m[41m	[m
+[32m+[m[32mdpao	huvaoly[m[41m [m
+[32m+[m[32mnlulyhs,	Wvtwlf,	huk h[m[41m [m
+[32m+[m[32mdlhsaof whaypjphu, Jyhzzbz.[m[41m	[m
+[32m+[m[32mAvnlaoly, aolzl	aoyll[m[41m	[m
+[32m+[m[32mtlu	hzzbtlk[m[41m	[m
+[32m+[m[32mjvuayvs vm aol Yvthu	Ylwbispj,[m[41m	[m
+[32m+[m[32mhuk Jhlzhy dhz aoybza	puav[m[41m	[m
+[32m+[m[32maol wvzpapvu vm[m[41m [m
+[32m+[m[32mjvuzbs.	Opzavyphuz[m[41m [m
+[32m+[m[32mohcl zpujl kbiilk[m[41m	[m
+[32m+[m[32maol	wlypvk	vm ybsl[m[41m	[m
+[32m+[m[32mif aolzl aoyll	tlu[m[41m [m
+[32m+[m[32maol	Mpyza[m[41m	[m
+[32m+[m[32mAypbtcpyhal. Vcly aptl,	ovdlcly,	aol[m[41m	[m
+[32m+[m[32maypbtcpyhal iyvrl	kvdu. Jyhzzbz[m[41m [m
+[32m+[m[32mdhz	rpsslk pu[m[41m [m
+[32m+[m[32mihaasl,	huk	Wvtwlf[m[41m	[m
+[32m+[m[32milnhu lualyahpupun	pklhz[m[41m [m
+[32m+[m[32mvm	ybspun dpaovba aol[m[41m	[m
+[32m+[m[32mkhunlyvbzsf	wvwbshy Jhlzhy. Dopsl[m[41m	[m
+[32m+[m[32mJhlzhy[m[41m [m
+[32m+[m[32mdhz mpnoapun[m[41m [m
+[32m+[m[32mpu	Nhbs (tvklyu-khf	Myhujl),[m[41m [m
+[32m+[m[32mWvtwlf	huk	aol Zluhal vyklylk[m[41m [m
+[32m+[m[32mJhlzhy[m[41m [m
+[32m+[m[32mav	ylabyu av Yvtl[m[41m [m
+[32m+[m[32mdpaovba	opz[m[41m	[m
+[32m+[m[32mhytf. Iba	dolu[m[41m	[m
+[32m+[m[32mJhlzhy	jyvzzlk aol	Ybipjvu[m[41m [m
+[32m+[m[32mYpcly pu uvyaolyu Pahsf,	ol[m[41m	[m
+[32m+[m[32miyvbnoa[m[41m	[m
+[32m+[m[32mopz hytf	dpao opt[m[41m [m
+[32m+[m[32mpu	klmphujl[m[41m	[m
+[32m+[m[32mvm aol zluhal'z vykly.[m[41m	[m
+[32m+[m[32mAopz mhalmbs kljpzpvu[m[41m [m
+[32m+[m[32mslk av h[m[41m [m
+[32m+[m[32mjpcps dhy.[m[41m	[m
+[32m+[m[32mJhlzhy klmlhalk Wvtwlf'z[m[41m [m
+[32m+[m[32mmvyjlz	huk lualylk[m[41m [m
+[32m+[m[32mYvtl pu	46	I.J.L.,[m[41m [m
+[32m+[m[32maypbtwohua	huk	bujohsslunlk.[m[41m	[m
+[32m+[m[32mBwvu opz	ylabyu,[m[41m [m
+[32m+[m[32mJhlzhy thkl optzlsm[m[41m [m
+[32m+[m[32mkpjahavy huk	hizvsbal[m[41m	[m
+[32m+[m[32mybsly	vm Yvtl	huk[m[41m	[m
+[32m+[m[32mpaz alyypavyplz.[m[41m [m
+[32m+[m[32mKbypun	opz ybsl,	ol[m[41m [m
+[32m+[m[32mluhjalk zlclyhs ylmvytz.	Jhlzhy	mvbuklk[m[41m	[m
+[32m+[m[32mthuf	jvsvuplz	pu[m[41m	[m
+[32m+[m[32muldsf jvuxblylk alyypavyplz huk[m[41m	[m
+[32m+[m[32mwyvcpklk shuk	huk[m[41m	[m
+[32m+[m[32mvwwvyabupaf mvy wvvy Yvthuz[m[41m [m
+[32m+[m[32mdov	jovzl av[m[41m	[m
+[32m+[m[32mtpnyhal aolyl.[m[41m [m
+[32m+[m[32mOl	ylkbjlk aol	ubtily[m[41m [m
+[32m+[m[32mvm	zshclz[m[41m	[m
+[32m+[m[32mhuk	vwlulk[m[41m [m
+[32m+[m[32mjpapgluzopw bw av	wlvwsl[m[41m [m
+[32m+[m[32mspcpun pu	aol[m[41m	[m
+[32m+[m[32mwyvcpujlz. Mpuhssf,	ol[m[41m	[m
+[32m+[m[32mjylhalk	h uld	jhslukhy[m[41m [m
+[32m+[m[32muhtlk aol[m[41m [m
+[32m+[m[32mQbsphu	jhslukhy. Aopz	clyf[m[41m [m
+[32m+[m[32mjhslukhy, dpao[m[41m [m
+[32m+[m[32mh	mld[m[41m [m
+[32m+[m[32mtpuvy hkqbzatluaz, pz aol zhtl[m[41m [m
+[32m+[m[32mvul bzlk hyvbuk	aol	dvysk[m[41m	[m
+[32m+[m[32mavkhf.	Pu	44[m[41m [m
+[32m+[m[32mI.J.L.,	Qbspbz Jhlzhy[m[41m	[m
+[32m+[m[32mvyklylk aol Zluhal av	thrl[m[41m	[m
+[32m+[m[32mopt	kpjahavy mvy spml.[m[41m [m
+[32m+[m[32mAfwpjhssf, kpjahavyz[m[41m	[m
+[32m+[m[32mzlyclk mvy	h	sptpalk[m[41m	[m
+[32m+[m[32maptl (bzbhssf	zpe	tvuaoz),[m[41m	[m
+[32m+[m[32maolu zalwwlk kvdu.	Jhlzhy'z	hjapvuz[m[41m	[m
+[32m+[m[32maoylhalulk av	luk[m[41m	[m
+[32m+[m[32maol	Ylwbispj vujl	huk[m[41m	[m
+[32m+[m[32mmvy hss. Mlhypun	aopz	johunl,[m[41m	[m
+[32m+[m[32mh nyvbw	vm zluhavyz[m[41m [m
+[32m+[m[32mwsvaalk huk leljbalk	aol[m[41m [m
+[32m+[m[32mtbykly	vm	Jhlzhy[m[41m	[m
+[32m+[m[32mvu aol	Pklz[m[41m [m
+[32m+[m[32mvm Thyjo. Hsaovbno	aol	zluhavyz[m[41m	[m
+[32m+[m[32mzbjjllklk	pu lukpun	Jhlzhy'z[m[41m [m
+[32m+[m[32mspml, aolf[m[41m	[m
+[32m+[m[32mkpk	uva ylhspgl ha[m[41m	[m
+[32m+[m[32maoha	aptl	aoha aol[m[41m [m
+[32m+[m[32mYlwbispj ohk[m[41m	[m
+[32m+[m[32mkplk dpao	opt.	Yvtl[m[41m	[m
+[32m+[m[32mdvbsk uvd iljvtl hu[m[41m	[m
+[32m+[m[32mltwpyl. Aolu ol[m[41m	[m
+[32m+[m[32mzlua opz	tlu[m[41m	[m
+[32m+[m[32mbw huk	kvdu[m[41m	[m
+[32m+[m[32mav	nla	opt aopz[m[41m [m
+[32m+[m[32mtvulf, zv	aoha	ol[m[41m	[m
+[32m+[m[32mdhz slma[m[41m	[m
+[32m+[m[32mpu thuuly[m[41m [m
+[32m+[m[32m5 hsvul htvun	aolzl[m[41m [m
+[32m+[m[32maoplclz vm	aol[m[41m	[m
+[32m+[m[32mJpspjphuz	(dopjo	hyl[m[41m [m
+[32m+[m[32maol	jyblsslza[m[41m	[m
+[32m+[m[32mibajolyz	pu aol	dvysk)[m[41m	[m
+[32m+[m[32mdpao vul	vm	opz[m[41m	[m
+[32m+[m[32mmyplukz, huk[m[41m	[m
+[32m+[m[32madv vm	opz	zshclz[m[41m	[m
+[32m+[m[32mvusf: huk	fla	ol[m[41m	[m
+[32m+[m[32mthkl zv spaasl	yljrvupun	vm[m[41m	[m
+[32m+[m[32maolt, aoha	dolu[m[41m	[m
+[32m+[m[32mol	dhz klzpyvbz	av[m[41m	[m
+[32m+[m[32mzsllw, ol zlua	buav	aolt[m[41m	[m
+[32m+[m[32mav jvtthuk	aolt av[m[41m [m
+[32m+[m[32mthrl uv uvpzl.	Aobz[m[41m [m
+[32m+[m[32mdhz	ol	aopyaf-lpnoa[m[41m	[m
+[32m+[m[32mkhfz htvun	aolt,[m[41m [m
+[32m+[m[32muva rlwa hz	wypzvuly,	iba[m[41m	[m
+[32m+[m[32myhaoly	dhpalk bwvu	if[m[41m [m
+[32m+[m[32maolt hz[m[41m	[m
+[32m+[m[32mh	wypujl. Hss aopz[m[41m	[m
+[32m+[m[32maptl	ol	dvbsk ivsksf[m[41m [m
+[32m+[m[32mlelyjpzl optzlsm[m[41m	[m
+[32m+[m[32mpu huf[m[41m [m
+[32m+[m[32mzwvya vy whzaptl	aolf[m[41m [m
+[32m+[m[32mdvbsk nv	av.[m[41m	[m
+[32m+[m[32mHuk	vaolydopsl	hszv[m[41m [m
+[32m+[m[32mol	dvbsk[m[41m	[m
+[32m+[m[32mdypal	clyzlz, huk	thrl[m[41m	[m
+[32m+[m[32mvyhapvuz, huk	jhss	aolt[m[41m	[m
+[32m+[m[32mavnlaoly av[m[41m	[m
+[32m+[m[32mzhf	aolt ilmvyl[m[41m	[m
+[32m+[m[32maolt: huk pm huf vm[m[41m [m
+[32m+[m[32maolt zlltlk hz[m[41m	[m
+[32m+[m[32maovbno	aolf	ohk[m[41m [m
+[32m+[m[32muva buklyzavvk opt,[m[41m [m
+[32m+[m[32mvy whzzlk 6 uva mvy[m[41m	[m
+[32m+[m[32maolt, ol jhsslk aolt	isvjrolhkz[m[41m	[m
+[32m+[m[32mhuk iybal	ilhzaz; huk[m[41m [m
+[32m+[m[32mshbnopun,	aoylhalulk[m[41m	[m
+[32m+[m[32maolt aoha ol dvbsk[m[41m	[m
+[32m+[m[32mohun aolt bw. Iba aolf[m[41m	[m
+[32m+[m[32mdlyl hz tlyyf[m[41m [m
+[32m+[m[32mdpao aol[m[41m	[m
+[32m+[m[32mthaaly hz jvbsk[m[41m	[m
+[32m+[m[32mil,	huk avvr[m[41m [m
+[32m+[m[32mhss	pu nvvk whya,[m[41m [m
+[32m+[m[32maopurpun	aoha	aopz[m[41m	[m
+[32m+[m[32mopz	ivsk zwlljo jhtl[m[41m [m
+[32m+[m[32maoyvbno	aol	zptwspjpaf vm[m[41m	[m
+[32m+[m[32mopz fvbao. Zv[m[41m [m
+[32m+[m[32mdolu opz[m[41m	[m
+[32m+[m[32myhuzvt dhz jvtl myvt[m[41m	[m
+[32m+[m[32maol	jpaf vm[m[41m [m
+[32m+[m[32mTpslabt,	aolf ilpun whpk[m[41m [m
+[32m+[m[32maolpy	tvulf,[m[41m [m
+[32m+[m[32mhuk	ol	hnhpu zla[m[41m [m
+[32m+[m[32mha[m[41m	[m
+[32m+[m[32mspilyaf, ol	aolu[m[41m	[m
+[32m+[m[32mwylzluasf	7 hytlk huk thuulk[m[41m [m
+[32m+[m[32mjlyahpu	zopwz vba vm aol[m[41m	[m
+[32m+[m[32mohclu	vm Tpslabt, av mvssvd[m[41m	[m
+[32m+[m[32maovzl	aoplclz, dovt ol mvbuk[m[41m	[m
+\ No newline at end of file[m
+[1mdiff --git a/Tasks/WhiteSpaceMorze/migrations/__init__.py b/Tasks/WhiteSpaceMorze/migrations/__init__.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..e69de29[m
+[1mdiff --git a/Tasks/WhiteSpaceMorze/models.py b/Tasks/WhiteSpaceMorze/models.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..71a8362[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/WhiteSpaceMorze/models.py[m
+[36m@@ -0,0 +1,3 @@[m
+[32m+[m[32mfrom django.db import models[m
+[32m+[m
+[32m+[m[32m# Create your models here.[m
+[1mdiff --git a/Tasks/WhiteSpaceMorze/tests.py b/Tasks/WhiteSpaceMorze/tests.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..7ce503c[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/WhiteSpaceMorze/tests.py[m
+[36m@@ -0,0 +1,3 @@[m
+[32m+[m[32mfrom django.test import TestCase[m
+[32m+[m
+[32m+[m[32m# Create your tests here.[m
+[1mdiff --git a/Tasks/WhiteSpaceMorze/urls.py b/Tasks/WhiteSpaceMorze/urls.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..29f4251[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/WhiteSpaceMorze/urls.py[m
+[36m@@ -0,0 +1,6 @@[m
+[32m+[m[32mfrom django.urls import path, include[m
+[32m+[m[32mfrom .views import index[m
+[32m+[m
+[32m+[m[32murlpatterns = [[m
+[32m+[m[32m    path('', index),[m
+[32m+[m[32m][m
+[1mdiff --git a/Tasks/WhiteSpaceMorze/views.py b/Tasks/WhiteSpaceMorze/views.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..9eb8679[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/WhiteSpaceMorze/views.py[m
+[36m@@ -0,0 +1,6 @@[m
+[32m+[m[32mfrom django.http import HttpResponse[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef index(request):[m
+[32m+[m[32m    file = open('WhiteSpaceMorze/caesar_encoded.txt', 'r')[m
+[32m+[m[32m    return HttpResponse(file.read())[m
+[1mdiff --git a/Tasks/db.sqlite3 b/Tasks/db.sqlite3[m
+[1mnew file mode 100644[m
+[1mindex 0000000..e69de29[m
+[1mdiff --git a/Tasks/manage.py b/Tasks/manage.py[m
+[1mnew file mode 100755[m
+[1mindex 0000000..44672da[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/manage.py[m
+[36m@@ -0,0 +1,22 @@[m
+[32m+[m[32m#!/usr/bin/env python[m
+[32m+[m[32m"""Django's command-line utility for administrative tasks."""[m
+[32m+[m[32mimport os[m
+[32m+[m[32mimport sys[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef main():[m
+[32m+[m[32m    """Run administrative tasks."""[m
+[32m+[m[32m    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Tasks.settings')[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        from django.core.management import execute_from_command_line[m
+[32m+[m[32m    except ImportError as exc:[m
+[32m+[m[32m        raise ImportError([m
+[32m+[m[32m            "Couldn't import Django. Are you sure it's installed and "[m
+[32m+[m[32m            "available on your PYTHONPATH environment variable? Did you "[m
+[32m+[m[32m            "forget to activate a virtual environment?"[m
+[32m+[m[32m        ) from exc[m
+[32m+[m[32m    execute_from_command_line(sys.argv)[m
+[32m+[m
+[32m+[m
+[32m+[m[32mif __name__ == '__main__':[m
+[32m+[m[32m    main()[m
+[1mdiff --git a/Tasks/requirements.txt b/Tasks/requirements.txt[m
+[1mnew file mode 100644[m
+[1mindex 0000000..da2d649[m
+[1m--- /dev/null[m
+[1m+++ b/Tasks/requirements.txt[m
+[36m@@ -0,0 +1,4 @@[m
+[32m+[m[32masgiref==3.3.4[m
+[32m+[m[32mDjango==3.2.4[m
+[32m+[m[32mpytz==2021.1[m
+[32m+[m[32msqlparse==0.4.1[m
+[1mdiff --git a/TheNextNothing/Dockerfile b/TheNextNothing/Dockerfile[m
+[1mnew file mode 100644[m
+[1mindex 0000000..ded497c[m
+[1m--- /dev/null[m
+[1m+++ b/TheNextNothing/Dockerfile[m
+[36m@@ -0,0 +1,8 @@[m
+[32m+[m[32m# syntax=docker/dockerfile:1[m
+[32m+[m[32mFROM python:3[m
+[32m+[m[32mENV PYTHONUNBUFFERED=1[m
+[32m+[m[32mWORKDIR /tnn[m
+[32m+[m[32mCOPY requirements.txt /tnn/[m
+[32m+[m[32mRUN python -m pip install --upgrade pip[m
+[32m+[m[32mRUN pip install -r requirements.txt[m
+[32m+[m[32mCOPY . /tnn/[m
+\ No newline at end of file[m
+[1mdiff --git a/TheNextNothing/TheNextNothing/__init__.py b/TheNextNothing/TheNextNothing/__init__.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..e69de29[m
+[1mdiff --git a/TheNextNothing/TheNextNothing/asgi.py b/TheNextNothing/TheNextNothing/asgi.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..ec8ce4d[m
+[1m--- /dev/null[m
+[1m+++ b/TheNextNothing/TheNextNothing/asgi.py[m
+[36m@@ -0,0 +1,6 @@[m
+[32m+[m[32mimport os[m
+[32m+[m[32mfrom django.core.asgi import get_asgi_application[m
+[32m+[m
+[32m+[m[32mos.environ.setdefault('DJANGO_SETTINGS_MODULE', 'TheNextNothing.settings')[m
+[32m+[m
+[32m+[m[32mapplication = get_asgi_application()[m
+[1mdiff --git a/TheNextNothing/TheNextNothing/settings.py b/TheNextNothing/TheNextNothing/settings.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..2450971[m
+[1m--- /dev/null[m
+[1m+++ b/TheNextNothing/TheNextNothing/settings.py[m
+[36m@@ -0,0 +1,83 @@[m
+[32m+[m[32mfrom pathlib import Path[m
+[32m+[m
+[32m+[m[32mBASE_DIR = Path(__file__).resolve().parent.parent[m
+[32m+[m
+[32m+[m[32mSECRET_KEY = 'omgsecretkey'[m
+[32m+[m
+[32m+[m[32mDEBUG = False[m
+[32m+[m
+[32m+[m[32mALLOWED_HOSTS = ['*', ][m
+[32m+[m
+[32m+[m[32mINSTALLED_APPS = [[m
+[32m+[m[32m    'django.contrib.admin',[m
+[32m+[m[32m    'django.contrib.auth',[m
+[32m+[m[32m    'django.contrib.contenttypes',[m
+[32m+[m[32m    'django.contrib.sessions',[m
+[32m+[m[32m    'django.contrib.messages',[m
+[32m+[m[32m    'django.contrib.staticfiles',[m
+[32m+[m[32m    'thenextnothing'[m
+[32m+[m[32m][m
+[32m+[m
+[32m+[m[32mMIDDLEWARE = [[m
+[32m+[m[32m    'django.middleware.security.SecurityMiddleware',[m
+[32m+[m[32m    'django.contrib.sessions.middleware.SessionMiddleware',[m
+[32m+[m[32m    'django.middleware.common.CommonMiddleware',[m
+[32m+[m[32m    'django.middleware.csrf.CsrfViewMiddleware',[m
+[32m+[m[32m    'django.contrib.auth.middleware.AuthenticationMiddleware',[m
+[32m+[m[32m    'django.contrib.messages.middleware.MessageMiddleware',[m
+[32m+[m[32m    'django.middleware.clickjacking.XFrameOptionsMiddleware',[m
+[32m+[m[32m][m
+[32m+[m
+[32m+[m[32mROOT_URLCONF = 'TheNextNothing.urls'[m
+[32m+[m
+[32m+[m[32mTEMPLATES = [[m
+[32m+[m[32m    {[m
+[32m+[m[32m        'BACKEND': 'django.template.backends.django.DjangoTemplates',[m
+[32m+[m[32m        'DIRS': [],[m
+[32m+[m[32m        'APP_DIRS': True,[m
+[32m+[m[32m        'OPTIONS': {[m
+[32m+[m[32m            'context_processors': [[m
+[32m+[m[32m                'django.template.context_processors.debug',[m
+[32m+[m[32m                'django.template.context_processors.request',[m
+[32m+[m[32m                'django.contrib.auth.context_processors.auth',[m
+[32m+[m[32m                'django.contrib.messages.context_processors.messages',[m
+[32m+[m[32m            ],[m
+[32m+[m[32m        },[m
+[32m+[m[32m    },[m
+[32m+[m[32m][m
+[32m+[m
+[32m+[m[32mWSGI_APPLICATION = 'TheNextNothing.wsgi.application'[m
+[32m+[m
+[32m+[m[32mDATABASES = {[m
+[32m+[m[32m    'default': {[m
+[32m+[m[32m        'ENGINE': 'django.db.backends.sqlite3',[m
+[32m+[m[32m        'NAME': BASE_DIR / 'db.sqlite3',[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mAUTH_PASSWORD_VALIDATORS = [[m
+[32m+[m[32m    {[m
+[32m+[m[32m        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',[m
+[32m+[m[32m    },[m
+[32m+[m[32m    {[m
+[32m+[m[32m        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',[m
+[32m+[m[32m    },[m
+[32m+[m[32m    {[m
+[32m+[m[32m        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',[m
+[32m+[m[32m    },[m
+[32m+[m[32m    {[m
+[32m+[m[32m        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',[m
+[32m+[m[32m    },[m
+[32m+[m[32m][m
+[32m+[m
+[32m+[m[32mLANGUAGE_CODE = 'en-us'[m
+[32m+[m
+[32m+[m[32mTIME_ZONE = 'UTC'[m
+[32m+[m
+[32m+[m[32mUSE_I18N = True[m
+[32m+[m
+[32m+[m[32mUSE_L10N = True[m
+[32m+[m
+[32m+[m[32mUSE_TZ = True[m
+[32m+[m
+[32m+[m[32mSTATIC_URL = '/static/'[m
+[1mdiff --git a/TheNextNothing/TheNextNothing/urls.py b/TheNextNothing/TheNextNothing/urls.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..54fee5a[m
+[1m--- /dev/null[m
+[1m+++ b/TheNextNothing/TheNextNothing/urls.py[m
+[36m@@ -0,0 +1,5 @@[m
+[32m+[m[32mfrom django.urls import path, include[m
+[32m+[m
+[32m+[m[32murlpatterns = [[m
+[32m+[m[32m    path('', include('thenextnothing.urls')),[m
+[32m+[m[32m][m
+[1mdiff --git a/TheNextNothing/TheNextNothing/wsgi.py b/TheNextNothing/TheNextNothing/wsgi.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..0cf1831[m
+[1m--- /dev/null[m
+[1m+++ b/TheNextNothing/TheNextNothing/wsgi.py[m
+[36m@@ -0,0 +1,6 @@[m
+[32m+[m[32mimport os[m
+[32m+[m[32mfrom django.core.wsgi import get_wsgi_application[m
+[32m+[m
+[32m+[m[32mos.environ.setdefault('DJANGO_SETTINGS_MODULE', 'TheNextNothing.settings')[m
+[32m+[m
+[32m+[m[32mapplication = get_wsgi_application()[m
+[1mdiff --git a/TheNextNothing/db.sqlite3 b/TheNextNothing/db.sqlite3[m
+[1mnew file mode 100644[m
+[1mindex 0000000..e69de29[m
+[1mdiff --git a/TheNextNothing/manage.py b/TheNextNothing/manage.py[m
+[1mnew file mode 100755[m
+[1mindex 0000000..733975c[m
+[1m--- /dev/null[m
+[1m+++ b/TheNextNothing/manage.py[m
+[36m@@ -0,0 +1,20 @@[m
+[32m+[m[32m#!/usr/bin/env python[m
+[32m+[m[32mimport os[m
+[32m+[m[32mimport sys[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef main():[m
+[32m+[m[32m    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'TheNextNothing.settings')[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        from django.core.management import execute_from_command_line[m
+[32m+[m[32m    except ImportError as exc:[m
+[32m+[m[32m        raise ImportError([m
+[32m+[m[32m            "Couldn't import Django. Are you sure it's installed and "[m
+[32m+[m[32m            "available on your PYTHONPATH environment variable? Did you "[m
+[32m+[m[32m            "forget to activate a virtual environment?"[m
+[32m+[m[32m        ) from exc[m
+[32m+[m[32m    execute_from_command_line(sys.argv)[m
+[32m+[m
+[32m+[m
+[32m+[m[32mif __name__ == '__main__':[m
+[32m+[m[32m    main()[m
+[1mdiff --git a/TheNextNothing/requirements.txt b/TheNextNothing/requirements.txt[m
+[1mnew file mode 100644[m
+[1mindex 0000000..da2d649[m
+[1m--- /dev/null[m
+[1m+++ b/TheNextNothing/requirements.txt[m
+[36m@@ -0,0 +1,4 @@[m
+[32m+[m[32masgiref==3.3.4[m
+[32m+[m[32mDjango==3.2.4[m
+[32m+[m[32mpytz==2021.1[m
+[32m+[m[32msqlparse==0.4.1[m
+[1mdiff --git a/TheNextNothing/thenextnothing/__init__.py b/TheNextNothing/thenextnothing/__init__.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..e69de29[m
+[1mdiff --git a/TheNextNothing/thenextnothing/admin.py b/TheNextNothing/thenextnothing/admin.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..c6fe108[m
+[1m--- /dev/null[m
+[1m+++ b/TheNextNothing/thenextnothing/admin.py[m
+[36m@@ -0,0 +1,2 @@[m
+[32m+[m[32mfrom django.contrib import admin[m
+[32m+[m
+[1mdiff --git a/TheNextNothing/thenextnothing/apps.py b/TheNextNothing/thenextnothing/apps.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..a2baa2e[m
+[1m--- /dev/null[m
+[1m+++ b/TheNextNothing/thenextnothing/apps.py[m
+[36m@@ -0,0 +1,6 @@[m
+[32m+[m[32mfrom django.apps import AppConfig[m
+[32m+[m
+[32m+[m
+[32m+[m[32mclass ThenextnothingConfig(AppConfig):[m
+[32m+[m[32m    default_auto_field = 'django.db.models.BigAutoField'[m
+[32m+[m[32m    name = 'thenextnothing'[m
+[1mdiff --git a/TheNextNothing/thenextnothing/migrations/__init__.py b/TheNextNothing/thenextnothing/migrations/__init__.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..e69de29[m
+[1mdiff --git a/TheNextNothing/thenextnothing/models.py b/TheNextNothing/thenextnothing/models.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..137941f[m
+[1m--- /dev/null[m
+[1m+++ b/TheNextNothing/thenextnothing/models.py[m
+[36m@@ -0,0 +1 @@[m
+[32m+[m[32mfrom django.db import models[m
+[1mdiff --git a/TheNextNothing/thenextnothing/tests.py b/TheNextNothing/thenextnothing/tests.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..2e9cb5f[m
+[1m--- /dev/null[m
+[1m+++ b/TheNextNothing/thenextnothing/tests.py[m
+[36m@@ -0,0 +1 @@[m
+[32m+[m[32mfrom django.test import TestCase[m
+[1mdiff --git a/TheNextNothing/thenextnothing/urls.py b/TheNextNothing/thenextnothing/urls.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..76a64d4[m
+[1m--- /dev/null[m
+[1m+++ b/TheNextNothing/thenextnothing/urls.py[m
+[36m@@ -0,0 +1,7 @@[m
+[32m+[m[32mfrom django.urls import path, include[m
+[32m+[m[32mfrom . import views[m
+[32m+[m
+[32m+[m[32murlpatterns = [[m
+[32m+[m[32m    path('', views.index),[m
+[32m+[m[32m    path('<id_t>', views.index),[m
+[32m+[m[32m][m
+[1mdiff --git a/TheNextNothing/thenextnothing/views.py b/TheNextNothing/thenextnothing/views.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..148c651[m
+[1m--- /dev/null[m
+[1m+++ b/TheNextNothing/thenextnothing/views.py[m
+[36m@@ -0,0 +1,388 @@[m
+[32m+[m[32mfrom django.http import HttpResponse[m
+[32m+[m[32mfrom random import randint[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef index(request, id_t=None):[m
+[32m+[m[32m    if id_t:[m
+[32m+[m[32m        try:[m
+[32m+[m[32m            id_t = int(id_t)[m
+[32m+[m[32m        except:[m
+[32m+[m[32m            pass[m
+[32m+[m[32m        stage1 = [1337, 5241, 3014, 7491, 2203, 4905, 4796, 3861, 4670, 4042, 6423, 7991, 2245, 6917, 2068, 8532, 6136,[m
+[32m+[m[32m                  6792, 3997,[m
+[32m+[m[32m                  7955, 4745, 7371, 3239, 2163, 8320, 8075, 6029, 3878, 4166, 2273, 9397, 3999, 9063, 3923, 4586, 3846,[m
+[32m+[m[32m                  2175, 3799,[m
+[32m+[m[32m                  4272, 6547, 5881, 2116, 5931, 4519, 3174, 8265, 2315, 8316, 2819, 8815, 7840, 6849, 2559, 6858, 5164,[m
+[32m+[m[32m                  3141, 5742,[m
+[32m+[m[32m                  4014, 4467, 2079, 6109, 3307, 5942, 2858, 3482, 7460, 2416, 4207, 8014, 6588, 7385, 3568, 3685, 7879,[m
+[32m+[m[32m                  4269, 5354,[m
+[32m+[m[32m                  9730, 5797, 6343, 4940, 5125, 5388, 8944, 9871, 9601, 8095, 7708, 5925, 5863, 9771, 9857, 7998, 6335,[m
+[32m+[m[32m                  3264, 7109,[m
+[32m+[m[32m                  8447, 4198, 5945, 7302, 7704, 3801, 4021, 2902, 6134, 2717, 3463, 7005, 6173, 7297, 3546, 7296, 7873,[m
+[32m+[m[32m                  8281, 7468,[m
+[32m+[m[32m                  3702, 2295, 2335, 4127, 8298, 3581, 3897, 8725, 2257, 9478, 7205, 2366, 4102, 4956, 8949, 6544, 5435,[m
+[32m+[m[32m                  3424, 7947,[m
+[32m+[m[32m                  2091, 2320, 6573, 9659, 3754, 9677, 4790, 5670, 3778, 7272, 9393, 5476, 8657, 9117, 3611, 9884, 9214,[m
+[32m+[m[32m                  2390, 5666,[m
+[32m+[m[32m                  6411, 2059, 2313, 9691, 4446, 6608, 2027, 8517, 3479, 6775, 6165, 3218, 4434, 9784, 3272, 2018, 4443,[m
+[32m+[m[32m                  3203, 3234,[m
+[32m+[m[32m                  6013, 5002, 6379, 2583, 7288, 8158, 8705, 9145, 6433, 3687, 9671, 2768, 7907, 9150, 2393, 8434, 4163,[m
+[32m+[m[32m                  7818, 7878,[m
+[32m+[m[32m                  4853, 6684, 8989, 3462, 6507, 8459, 7520, 6448, 2332, 7095, 3031, 3744, 6058, 2713, 6803, 9875, 9048,[m
+[32m+[m[32m                  8049, 9148,[m
+[32m+[m[32m                  6406, 7537, 5272, 2392, 8525, 5869, 2305, 9237, 4092, 9796, 4994, 5554, 2954, 2471, 5927, 5198, 4423,[m
+[32m+[m[32m                  2110, 8853,[m
+[32m+[m[32m                  6471, 8373, 9632, 9827, 5489, 2621, 2087, 6168, 6927, 6845, 8335, 4346, 5540, 5222, 3659, 3965, 4898,[m
+[32m+[m[32m                  5460, 3169,[m
+[32m+[m[32m                  2525, 5434, 9110, 5934, 4548, 3245, 3362, 8396, 5968, 7842, 6044, 7981, 2751, 2399, 7882, 9109, 6681,[m
+[32m+[m[32m                  9013, 4730,[m
+[32m+[m[32m                  6496, 3458, 8282, 7463, 7588, 8124, 3921, 3783, 2637, 8404, 3973, 4145, 5320, 6630, 2230, 9317, 9598,[m
+[32m+[m[32m                  2228, 5825,[m
+[32m+[m[32m                  8276, 5111, 8854, 7415, 7657, 5280, 5593, 7390, 3552, 2878, 4248, 8506, 9339, 9911, 2969, 4216, 7274,[m
+[32m+[m[32m                  2150, 3265,[m
+[32m+[m[32m                  7201, 5321, 6725, 5043, 6828, 8599, 5841, 7147, 6051, 9250, 5673, 2560, 8929, 5459, 9627, 9946, 6249,[m
+[32m+[m[32m                  9974, 6756,[m
+[32m+[m[32m                  3136, 4843, 3633, 7832, 8504, 5404, 4078, 3377, 6997, 5061, 2842, 8658, 9894, 4064, 4356, 8478, 6484,[m
+[32m+[m[32m                  4854, 7028,[m
+[32m+[m[32m                  7665, 8020, 5545, 2492, 5778, 7257, 9288, 3082, 3796, 6710, 8913, 3320, 7471, 3756, 2105, 6716, 8215,[m
+[32m+[m[32m                  9240, 6661,[m
+[32m+[m[32m                  4562, 5520, 5254, 7581, 7126, 8820, 5875, 2306, 3238, 7526, 8202, 8600, 5050, 4682, 3337, 2601, 8511,[m
+[32m+[m[32m                  5866, 7694,[m
+[32m+[m[32m                  4174, 8663, 6213, 6042, 2419, 7179, 8353, 7429, 4118, 5559, 9030, 5006, 6095, 4201, 6922, 5913, 4500,[m
+[32m+[m[32m                  3690, 4342,[m
+[32m+[m[32m                  2568, 9602, 3827, 6053, 6967, 4317, 6770, 4301, 6717, 9817, 9355, 5005, 6094, 9587, 3992, 6012, 8846,[m
+[32m+[m[32m                  2889, 6956,[m
+[32m+[m[32m                  8197, 4139, 3644, 8881, 7641, 2620, 9169, 6651, 3900, 9882, 2367, 7133, 8782, 3536, 3086, 8836, 8210,[m
+[32m+[m[32m                  4128, 4608,[m
+[32m+[m[32m                  7419, 8472, 3415, 7442, 4455, 6600, 9949, 3601, 8988, 4155, 6139, 2337, 4707, 7440, 2218, 4826, 6028,[m
+[32m+[m[32m                  5596, 3475,[m
+[32m+[m[32m                  4741, 3062, 4146, 7148, 7139, 9326, 4565, 7331, 7542, 7137, 3085, 5503, 9531, 7541, 3319, 7841, 3246,[m
+[32m+[m[32m                  2947, 8167,[m
+[32m+[m[32m                  5074, 3874, 2670, 9575, 8030, 7470, 9124, 7037, 6470, 5978, 8516, 8289, 2854, 5106, 3604, 9392, 9154,[m
+[32m+[m[32m                  5336, 2016,[m
+[32m+[m[32m                  4631, 9746, 9808, 8233, 9367, 3391, 8984, 8105, 7150, 4934, 7510, 2284, 5681, 2632, 9120, 8259, 7485,[m
+[32m+[m[32m                  2054, 7258,[m
+[32m+[m[32m                  4013, 3016, 3720, 4308, 7085, 5983, 5482, 8063, 4100, 5953, 3564, 5674, 8292, 4194, 3769, 4432, 2896,[m
+[32m+[m[32m                  9657, 9883,[m
+[32m+[m[32m                  8950, 4386, 7475, 6991, 9960, 7029, 3228, 2155, 6219, 4055, 8961, 2897, 5103, 3708, 4242, 7004, 5651,[m
+[32m+[m[32m                  4616, 7317,[m
+[32m+[m[32m                  4706, 2529, 4755, 5219, 9802, 2862, 8205, 4347, 8457, 7958, 7426, 6430, 3195, 3572, 5288, 7333, 8576,[m
+[32m+[m[32m                  7625, 9361,[m
+[32m+[m[32m                  8439, 3664, 4698, 9363, 3114, 9134, 3631, 4132, 9210, 8792, 9963, 8462, 6417, 7585, 9703, 6868, 4031,[m
+[32m+[m[32m                  6769, 4550,[m
+[32m+[m[32m                  9161, 8500, 4644, 7155, 8995, 3428, 5769, 9132, 8225, 3418, 6862, 4188, 4387, 5726, 8505, 6693, 2136,[m
+[32m+[m[32m                  2718, 6393,[m
+[32m+[m[32m                  3510, 7244, 2936, 6125, 7290, 6456, 9079, 6027, 3432, 5933, 5056, 5035, 7416, 8375, 7422, 3153, 3004,[m
+[32m+[m[32m                  8406, 7795,[m
+[32m+[m[32m                  8005, 5412, 7993, 7436, 9594, 2435, 9865, 7070, 2905, 8821, 5600, 2314, 6290, 9462, 2929, 7607, 2553,[m
+[32m+[m[32m                  2439, 9860,[m
+[32m+[m[32m                  7183, 6111, 5573, 9246, 3523, 5068, 9444, 9943, 7144, 7990, 8563, 6358, 6629, 3695, 2153, 7464, 4048,[m
+[32m+[m[32m                  9312, 8120,[m
+[32m+[m[32m                  9106, 8222, 2507, 8475, 4763, 3110, 8381, 9315, 4402, 7486, 4491, 9578, 8818, 6506, 4511, 2374, 4416,[m
+[32m+[m[32m                  3642, 2843,[m
+[32m+[m[32m                  4422, 9564, 8311, 8752, 9674, 3212, 3920, 9830, 6312, 2710, 5695, 6777, 2483, 5124, 9912, 6298, 4350,[m
+[32m+[m[32m                  3472, 7765,[m
+[32m+[m[32m                  7827, 2067, 3258, 3636, 8330, 6180, 3830, 6538, 5133, 3850, 2450, 9736, 9222, 9506, 8536, 2824, 7693,[m
+[32m+[m[32m                  2903, 4965,[m
+[32m+[m[32m                  8255, 4026, 4675, 7086, 8912, 5400, 5900, 7502, 4985, 9626, 6838, 6076, 6127, 4767, 5150, 2664, 3786,[m
+[32m+[m[32m                  8683, 5717,[m
+[32m+[m[32m                  3178, 4802, 3641, 6494, 5196, 6643, 9029, 2449, 5570, 2602, 8031, 5305, 8386, 2720, 2214, 2495, 8237,[m
+[32m+[m[32m                  4266, 3890,[m
+[32m+[m[32m                  6447, 5549, 6686, 7011, 4874, 6440, 6906, 6007, 5069, 7915, 7863, 6841, 9076, 4624, 5816, 2236, 2679,[m
+[32m+[m[32m                  8876, 4313,[m
+[32m+[m[32m                  9350, 5902, 9309, 6537, 4833, 2607, 4462, 9646, 2164, 4276, 2039, 5762, 3251, 2353, 7796, 8076, 9498,[m
+[32m+[m[32m                  5021, 6829,[m
+[32m+[m[32m                  2613, 7332, 3854, 9630, 4976, 4703, 4109, 3693, 3367, 9348, 5800, 9353, 6812, 5952, 7994, 2120, 4685,[m
+[32m+[m[32m                  8994, 4963,[m
+[32m+[m[32m                  8938, 4858, 4578, 7116, 7311, 4567, 8553, 6185, 7013, 6950, 3101, 5227, 4377, 2132, 3360, 2042, 8594,[m
+[32m+[m[32m                  9967, 9261,[m
+[32m+[m[32m                  2221, 2168, 7345, 5775, 3570, 5922, 5642, 4650, 3146, 6046, 7275, 4232, 4427, 2183, 4636, 2697, 9129,[m
+[32m+[m[32m                  6532, 2913,[m
+[32m+[m[32m                  5348, 3252, 5183, 6420, 8745, 7280, 8644, 9968, 3531, 6889, 7030, 5475, 8952, 2728, 9904, 9941, 5731,[m
+[32m+[m[32m                  7909, 7963,[m
+[32m+[m[32m                  5013, 4817, 4043, 6562, 7544, 9981, 9780, 4588, 2961, 8868, 2009, 7514, 3746, 4577, 7804, 4974, 5238,[m
+[32m+[m[32m                  2541, 6422,[m
+[32m+[m[32m                  2850, 2791, 2652, 3240, 8481, 4804, 5031, 9777, 4413, 2259, 3806, 9182, 4876, 8084, 8545, 9201, 3142,[m
+[32m+[m[32m                  9203, 3928,[m
+[32m+[m[32m                  7488, 6253, 8305, 5070, 7090, 4942, 2432, 6860, 9889, 2904, 5442, 2458, 4219, 9930, 9840, 2785, 5362,[m
+[32m+[m[32m                  7173, 5587,[m
+[32m+[m[32m                  6871, 6201, 4939, 7521, 3867, 3410, 4776, 2486, 7449, 2996, 7880, 6047, 8939, 8865, 3716, 4916, 7789,[m
+[32m+[m[32m                  5930, 4573,[m
+[32m+[m[32m                  5893, 9427, 2493, 7255, 5962, 2282, 9571, 8035, 6583, 9795, 6965, 7957, 2522, 7561, 2177, 5524, 9362,[m
+[32m+[m[32m                  8601, 5058,[m
+[32m+[m[32m                  6123, 6613, 7093, 5452, 8290, 4651, 7852, 6346, 8959, 8549, 5844, 5087, 4589, 2530, 5309, 4247, 5513,[m
+[32m+[m[32m                  2137, 7014,[m
+[32m+[m[32m                  8878, 3844, 8040, 5271, 4877, 5711, 6575, 5205, 3935, 3855, 9022, 7608, 8055, 7375, 2739, 2078, 9324,[m
+[32m+[m[32m                  5905, 9592,[m
+[32m+[m[32m                  5788, 3347, 5117, 8426, 8645, 3485, 8025, 8893, 2759, 8780, 6441, 5996, 8188, 9855, 5040, 4390, 4750,[m
+[32m+[m[32m                  3253, 2765,[m
+[32m+[m[32m                  4290, 7103, 5209, 5486, 9558, 8143, 3359, 9880, 2719, 6732, 9685, 9276, 6145, 4409, 6200, 4441, 2161,[m
+[32m+[m[32m                  4774, 4412,[m
+[32m+[m[32m                  5447, 7534, 6705, 2151, 2475, 7615, 4635, 5719, 8643, 9430, 2229, 3089, 9041, 3881, 6391, 6014, 2460,[m
+[32m+[m[32m                  8208, 6257,[m
+[32m+[m[32m                  9563, 9747, 8207, 9458, 6604, 8555, 7474, 8960, 3885, 9652, 8707, 3815, 9957, 9474, 9255, 6730, 3249,[m
+[32m+[m[32m                  6908, 5141,[m
+[32m+[m[32m                  8279, 2290, 8402, 2031, 9291, 6380, 9760, 5417, 2956, 9502, 9616, 5192, 9565, 6171, 5542, 9873, 2262,[m
+[32m+[m[32m                  9581, 4995,[m
+[32m+[m[32m                  9544, 5590, 2124, 9655, 9829, 3383, 8331, 5028, 9223, 6692, 8187, 7068, 5659, 5663, 9800, 7910, 7659,[m
+[32m+[m[32m                  4373, 4111,[m
+[32m+[m[32m                  5843, 7778, 7306, 7358, 5515, 3964, 8649, 5705, 7680, 4937, 8839, 5691, 9300, 2853, 7601, 7839, 6923,[m
+[32m+[m[32m                  9329, 2690,[m
+[32m+[m[32m                  3736, 4229, 3164, 6548, 9993, 8593, 6133, 6819, 8147, 7651, 2626, 9441, 4466, 6080, 4257, 3532, 6700,[m
+[32m+[m[32m                  2526, 8851,[m
+[32m+[m[32m                  5776, 6722, 7557, 7891, 5313, 6572, 3350, 6786, 6952, 2073, 8348, 2002, 8224, 8972, 9412, 6077, 9864,[m
+[32m+[m[32m                  5144, 4410,[m
+[32m+[m[32m                  2258, 8937, 7859, 6707, 3911, 6206, 3787, 3349, 9811, 6597, 7020, 8931, 6197, 7738, 3390, 7758, 6884,[m
+[32m+[m[32m                  5991, 8712,[m
+[32m+[m[32m                  3703, 4809, 6175, 2793, 3774, 6620, 6876, 3309, 8432, 6374, 5753, 3054, 4165, 8066, 6099, 6867, 5295,[m
+[32m+[m[32m                  9758, 9984,[m
+[32m+[m[32m                  7421, 4329, 4848, 5508, 2675, 8485, 7546, 5016, 8768, 7500, 5324, 5407, 5375, 3648, 3363, 3049, 4918,[m
+[32m+[m[32m                  2661, 4544,[m
+[32m+[m[32m                  9821, 3351, 6330, 8363, 6940, 8413, 9690, 9528, 4637, 3170, 9183, 3441, 6891, 6516, 6543, 4669, 4018,[m
+[32m+[m[32m                  2893, 3453,[m
+[32m+[m[32m                  5379, 8487, 6049, 8417, 4069, 4459, 2082, 5154, 5483, 4001, 9101, 8632, 7286, 5924, 4255, 8378, 2641,[m
+[32m+[m[32m                  6607, 9812,[m
+[32m+[m[32m                  5142, 9179, 6409, 6366, 3930, 2663, 2192, 3688, 9299, 3395, 3052, 5369, 3454, 3404, 6061, 6861, 3826,[m
+[32m+[m[32m                  7441, 2014,[m
+[32m+[m[32m                  3937, 6375, 6627, 2572, 5114, 7709, 6502, 7106, 9603, 2383, 2255, 3220, 8597, 2940, 8191, 7059, 6581,[m
+[32m+[m[32m                  9336, 9136,[m
+[32m+[m[32m                  7970, 7739, 5139, 8895, 7810, 2612, 9149, 4770, 4330, 8557, 5485, 2959, 3975, 5188, 8872, 2736, 2579,[m
+[32m+[m[32m                  9785, 4393,[m
+[32m+[m[32m                  8074, 4058, 5882, 4640, 7822, 6004, 3519, 2191, 3814, 3828, 8565, 6285, 6831, 2608, 6287, 9676, 4196,[m
+[32m+[m[32m                  3487, 6914,[m
+[32m+[m
