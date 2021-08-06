@@ -25,11 +25,3 @@ services:
     ports:
       - "8002:8002"
     restart: always
-  ds:
-    build: ./ran-django-template-2
-    command: python manage.py runserver 0.0.0.0:8003
-    volumes:
-      - ./ran-django-template-2:/web/
-    ports:
-      - "8003:8003"
-    restart: always
