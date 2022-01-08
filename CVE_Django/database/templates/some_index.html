@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Hello Django 3.1.12</title>
+</head>
+<body>
+    <form method="POST">
+        {% csrf_token %}
+    <table>
+        {{ form }}
+    </table>
+    <input type="submit" value="Send">
+    {% if latest_question_list %}
+    <ul>
+    {% for question in latest_question_list %}
+        <li><a >{{ question.question_text }}   ({{ question.id }})</a></li>
+    {% endfor %}
+    </ul>
+    {% else %}
+        <p>No questions are available.</p>
+    {% endif %} 
+</body>
+</html>
